@@ -5,9 +5,11 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from backend.core.models import TransactionIntent
+from backend.core.events import TRANSACTION_CREATED
 from backend.database.models.transaction import TransactionModel
 from backend.database.repositories.agent import AgentRepository
 from backend.database.repositories.catalog import CatalogRepository
+from backend.database.repositories.event import EventRepository
 from backend.database.repositories.merchant import MerchantRepository
 from backend.database.repositories.negotiation import NegotiationRepository
 from backend.database.repositories.transaction import TransactionRepository
@@ -23,6 +25,7 @@ class TransactionService:
 		self.catalog = CatalogRepository(db)
 		self.negotiations = NegotiationRepository(db)
 		self.transactions = TransactionRepository(db)
+		self.events = EventRepository(db)
 
 	def create_transaction(self, intent: TransactionIntent) -> TransactionModel:
 		buyer = self.agents.get(intent.buyer_agent_id)
@@ -57,7 +60,7 @@ class TransactionService:
 		if existing is not None:
 			return existing
 
-		return self.transactions.create(
+		transaction = self.transactions.create(
 			transaction_id=intent.transaction_id,
 			idempotency_key=intent.idempotency_key,
 			negotiation_id=intent.negotiation_id,
@@ -67,3 +70,17 @@ class TransactionService:
 			requested_price=Decimal(intent.requested_price),
 			currency=intent.currency,
 		)
+
+		self.events.append(
+			transaction_id=transaction.transaction_id,
+			event_type=TRANSACTION_CREATED,
+			actor_id=intent.buyer_agent_id,
+			payload={
+				"requested_price": str(intent.requested_price),
+				"currency": intent.currency,
+				"item_id": intent.item_id,
+				"negotiation_id": intent.negotiation_id,
+			},
+		)
+
+		return transaction

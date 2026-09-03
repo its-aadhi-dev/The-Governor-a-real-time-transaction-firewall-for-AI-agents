@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.core.models import TransactionIntent
+from backend.database.repositories.event import EventRepository
 from backend.database.repositories.transaction import DuplicateTransactionError
 from backend.database.session import get_db
 from backend.services.transaction_service import TransactionService
@@ -37,6 +38,31 @@ def create_transaction(
         "status": transaction.status,
         "requested_price": str(transaction.requested_price),
         "currency": transaction.currency,
+    }
+
+
+@router.get("/{transaction_id}/events")
+def get_transaction_events(
+    transaction_id: str,
+    db: Session = Depends(get_db),
+):
+    if TransactionService(db).transactions.get(transaction_id) is None:
+        raise HTTPException(status_code=404, detail="Transaction not found.")
+
+    events = EventRepository(db).list_for_transaction(transaction_id)
+    return {
+        "transaction_id": transaction_id,
+        "events": [
+            {
+                "event_id": event.event_id,
+                "event_type": event.event_type,
+                "actor_id": event.actor_id,
+                "sequence_number": event.sequence_number,
+                "payload": event.payload,
+                "created_at": event.created_at.isoformat(),
+            }
+            for event in events
+        ],
     }
 
 
