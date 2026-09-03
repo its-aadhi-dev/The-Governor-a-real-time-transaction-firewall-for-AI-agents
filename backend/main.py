@@ -3,6 +3,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from backend.database.session import get_db
+from backend.api.routes.transactions import router as transactions_router
 
 
 app = FastAPI(
@@ -13,6 +14,8 @@ app = FastAPI(
     ),
     version="0.1.0",
 )
+
+app.include_router(transactions_router, prefix="/api/v1")
 
 
 @app.get("/health")

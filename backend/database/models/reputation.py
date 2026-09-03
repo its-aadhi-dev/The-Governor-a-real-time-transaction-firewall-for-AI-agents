@@ -24,4 +24,25 @@ class AgentReputationModel(Base):
     blocked_transactions: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     policy_violations: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     last_violation_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_transaction_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)
+
+    @property
+    def reputation_score(self) -> Decimal:
+        return self.trust_score
+
+    @property
+    def transaction_count(self) -> int:
+        return (
+            self.successful_transactions
+            + self.review_transactions
+            + self.blocked_transactions
+        )
+
+    @property
+    def successful_transaction_count(self) -> int:
+        return self.successful_transactions
+
+    @property
+    def blocked_transaction_count(self) -> int:
+        return self.blocked_transactions
