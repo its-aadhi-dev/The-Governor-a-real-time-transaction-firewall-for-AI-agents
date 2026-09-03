@@ -1,4 +1,8 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
+from backend.database.session import get_db
 
 
 app = FastAPI(
@@ -16,5 +20,15 @@ def health():
     return {
         "status": "ok",
         "service": "the-governor",
+    }
+
+
+@app.get("/health/database")
+def database_health(db: Session = Depends(get_db)):
+    db.execute(text("SELECT 1"))
+
+    return {
+        "status": "ok",
+        "database": "online",
     }
     
