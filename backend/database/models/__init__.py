@@ -8,6 +8,7 @@ from backend.database.models.event import TransactionEventModel
 from backend.database.models.policy import PolicyDecisionModel
 from backend.database.models.reputation import AgentReputationModel
 from backend.database.models.price_observation import PriceObservationModel
+from backend.database.models.ledger import LedgerBlockModel
 
 __all__ = [
 	"AgentModel",
@@ -20,4 +21,5 @@ __all__ = [
 	"PolicyDecisionModel",
 	"AgentReputationModel",
 	"PriceObservationModel",
+	"LedgerBlockModel",
 ]
