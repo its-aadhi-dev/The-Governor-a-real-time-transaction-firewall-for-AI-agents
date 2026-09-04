@@ -38,6 +38,13 @@ class EventRepository:
         )
         self.db.add(event)
         self.db.flush()
+
+        pending_events = self.db.info.setdefault(
+            "governor_pending_events",
+            [],
+        )
+        pending_events.append(event)
+
         return event
 
     def list_for_transaction(self, transaction_id: str) -> List[TransactionEventModel]:
