@@ -46,16 +46,50 @@ class ReputationRepository:
         existing = self.get_by_agent(agent_id)
         return existing if existing is not None else self.create(agent_id=agent_id)
 
-    def record_success(self, *, agent_id: str) -> AgentReputationModel:
+    def adjust_score(
+        self,
+        *,
+        agent_id: str,
+        delta: Decimal,
+    ) -> AgentReputationModel:
         record = self.get_or_create(agent_id=agent_id)
+        record.trust_score = max(
+            Decimal("0"),
+            min(Decimal("1"), record.trust_score + delta),
+        )
+        record.updated_at = datetime.now(timezone.utc)
+        self.session.flush()
+        return record
+
+    def record_success(
+        self,
+        *,
+        agent_id: str,
+        score_delta: Decimal = Decimal("0.02"),
+    ) -> AgentReputationModel:
+        record = self.adjust_score(
+            agent_id=agent_id,
+            delta=score_delta,
+        )
         record.successful_transactions += 1
         record.last_transaction_at = datetime.now(timezone.utc)
         self.session.flush()
         return record
 
-    def record_block(self, *, agent_id: str) -> AgentReputationModel:
-        record = self.get_or_create(agent_id=agent_id)
+    def record_suspicious_block(
+        self,
+        *,
+        agent_id: str,
+        score_delta: Decimal = Decimal("-0.10"),
+    ) -> AgentReputationModel:
+        record = self.adjust_score(
+            agent_id=agent_id,
+            delta=score_delta,
+        )
         record.blocked_transactions += 1
         record.last_transaction_at = datetime.now(timezone.utc)
         self.session.flush()
         return record
+
+    def record_block(self, *, agent_id: str) -> AgentReputationModel:
+        return self.record_suspicious_block(agent_id=agent_id)
