@@ -4,7 +4,13 @@ from decimal import Decimal
 from typing import Optional
 from uuid import uuid4
 
-from backend.core.models import NegotiationProposal, NegotiationStatus, ProposalType
+from backend.core.models import (
+    NegotiatedDeal,
+    NegotiationProposal,
+    NegotiationStatus,
+    ProposalType,
+    TransactionIntent,
+)
 from backend.database.repositories.catalog import CatalogRepository
 from backend.database.repositories.negotiation import NegotiationRepository
 from backend.marketplace.negotiation import NegotiationEngine
@@ -52,6 +58,7 @@ class NegotiationService:
         transaction_id: Optional[str] = None,
         agent_id: Optional[str] = None,
     ) -> NegotiationProposal:
+        self._validate_negotiation_open(negotiation)
         engine = NegotiationEngine(
             merchant_floor_price=self._floor_price(negotiation.item_id),
         )
@@ -76,6 +83,7 @@ class NegotiationService:
         transaction_id: Optional[str] = None,
         agent_id: Optional[str] = None,
     ) -> NegotiationProposal:
+        self._validate_negotiation_open(negotiation)
         engine = NegotiationEngine(
             merchant_floor_price=self._floor_price(negotiation.item_id),
         )
@@ -91,11 +99,124 @@ class NegotiationService:
         self.negotiation_repository.db.flush()
         return proposal
 
+    def create_counter_offer(
+        self,
+        *,
+        negotiation,
+        buyer_price: Decimal,
+        merchant_price: Decimal,
+        transaction_id: Optional[str] = None,
+        agent_id: Optional[str] = None,
+    ) -> NegotiationProposal:
+        self._validate_negotiation_open(negotiation)
+        engine = NegotiationEngine(
+            merchant_floor_price=self._floor_price(negotiation.item_id),
+        )
+        proposal = engine.merchant_counter_offer(
+            buyer_price=buyer_price,
+            merchant_price=merchant_price,
+            round_number=negotiation.proposal_count + 1,
+            negotiation_id=negotiation.negotiation_id,
+            transaction_id=transaction_id or f"txn_{negotiation.negotiation_id}",
+            agent_id=agent_id or negotiation.merchant_agent_id,
+        )
+        self._persist_proposal(negotiation, proposal)
+        negotiation.status = NegotiationStatus.COUNTERED.value
+        self.negotiation_repository.db.flush()
+        return proposal
+
+    def finalize_deal(
+        self,
+        *,
+        negotiation,
+        final_proposal: NegotiationProposal,
+        transaction_id: Optional[str] = None,
+    ) -> NegotiatedDeal:
+        if negotiation.status != NegotiationStatus.ACCEPTED.value:
+            raise ValueError(
+                "A negotiated deal can only be finalized after acceptance."
+            )
+        if final_proposal.negotiation_id != negotiation.negotiation_id:
+            raise ValueError("Final proposal does not belong to this negotiation.")
+        if final_proposal.proposal_type != ProposalType.ACCEPT:
+            raise ValueError("Final proposal must be an ACCEPT proposal.")
+        if final_proposal.agent_id != negotiation.buyer_agent_id:
+            raise ValueError("Only the buyer may finalize the current negotiation.")
+
+        item = self.catalog.get(negotiation.item_id)
+        if item is None:
+            raise ValueError(
+                f"Catalog item '{negotiation.item_id}' does not exist."
+            )
+
+        return NegotiatedDeal(
+            transaction_id=transaction_id or final_proposal.transaction_id,
+            negotiation_id=negotiation.negotiation_id,
+            buyer_agent_id=negotiation.buyer_agent_id,
+            merchant_agent_id=negotiation.merchant_agent_id,
+            item={
+                "item_id": item.item_id,
+                "item_name": item.item_name,
+                "base_price": Decimal(item.base_price),
+                "currency": item.currency,
+            },
+            agreed_price=final_proposal.proposed_price,
+            currency=final_proposal.currency,
+            status=NegotiationStatus.ACCEPTED,
+            proposal_count=negotiation.proposal_count,
+            final_proposal_id=final_proposal.proposal_id,
+        )
+
+    def create_transaction_intent(
+        self,
+        *,
+        deal: NegotiatedDeal,
+        idempotency_key: Optional[str] = None,
+    ) -> TransactionIntent:
+        if deal.status != NegotiationStatus.ACCEPTED:
+            raise ValueError("Transaction intent requires an accepted negotiated deal.")
+        return TransactionIntent(
+            transaction_id=deal.transaction_id,
+            negotiation_id=deal.negotiation_id,
+            buyer_agent_id=deal.buyer_agent_id,
+            merchant_agent_id=deal.merchant_agent_id,
+            item=deal.item,
+            requested_price=deal.agreed_price,
+            currency=deal.currency,
+            idempotency_key=idempotency_key or f"idem-{deal.transaction_id}",
+        )
+
+    def finalize_transaction_intent(
+        self,
+        *,
+        negotiation,
+        final_proposal: NegotiationProposal,
+        transaction_id: Optional[str] = None,
+        idempotency_key: Optional[str] = None,
+    ) -> TransactionIntent:
+        deal = self.finalize_deal(
+            negotiation=negotiation,
+            final_proposal=final_proposal,
+            transaction_id=transaction_id,
+        )
+        return self.create_transaction_intent(
+            deal=deal,
+            idempotency_key=idempotency_key,
+        )
+
     def _floor_price(self, item_id: str) -> Decimal:
         item = self.catalog.get(item_id)
         if item is None:
             raise ValueError(f"Catalog item '{item_id}' does not exist.")
         return Decimal(item.base_price)
+
+    def _validate_negotiation_open(self, negotiation) -> None:
+        if negotiation.status in {
+            NegotiationStatus.ACCEPTED.value,
+            NegotiationStatus.REJECTED.value,
+            NegotiationStatus.EXPIRED.value,
+        }:
+            raise ValueError("Negotiation is no longer open for proposals.")
 
     def _persist_proposal(self, negotiation, proposal: NegotiationProposal) -> None:
         self.negotiation_repository.add_message(
