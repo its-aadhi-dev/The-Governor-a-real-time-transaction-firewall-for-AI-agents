@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.core.lifecycle import validate_transition
+from backend.core.constants import VELOCITY_COUNTED_STATUSES
 from backend.core.models import SystemDecision, TransactionStatus
 from backend.database.models.transaction import TransactionModel
 
@@ -137,3 +138,17 @@ class TransactionRepository:
 		)
 		amount, count = self.db.execute(statement).one()
 		return Decimal(amount or "0"), int(count or 0)
+
+	def count_recent_payment_path_transactions(
+		self,
+		*,
+		buyer_agent_id: str,
+		window_start_time: datetime,
+	) -> int:
+		statement = select(func.count()).select_from(TransactionModel).where(
+			TransactionModel.buyer_agent_id == buyer_agent_id,
+			TransactionModel.created_at >= window_start_time,
+			TransactionModel.status.in_(VELOCITY_COUNTED_STATUSES),
+		)
+
+		return int(self.db.scalar(statement) or 0)

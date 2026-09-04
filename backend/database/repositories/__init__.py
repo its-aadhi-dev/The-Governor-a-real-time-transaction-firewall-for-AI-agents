@@ -9,6 +9,7 @@ from backend.database.repositories.transaction import (
 	DuplicateTransactionError,
 	TransactionRepository,
 )
+from backend.database.repositories.velocity import VelocityRepository
 
 __all__ = [
 	"AgentRepository",
@@ -20,4 +21,5 @@ __all__ = [
 	"NegotiationRepository",
 	"TransactionRepository",
 	"DuplicateTransactionError",
+	"VelocityRepository",
 ]
