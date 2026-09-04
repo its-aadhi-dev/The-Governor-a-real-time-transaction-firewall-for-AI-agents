@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from backend.core.models import PaymentResult, SystemDecision
-from backend.payments.authorization import require_payment_authorization
+from backend.core.models import PaymentResult
 from backend.payments.razorpay import RazorpayAdapter
 
 
@@ -21,14 +20,14 @@ class PaymentService:
         self,
         *,
         transaction_id: str,
-        decision: SystemDecision,
-        authorized_amount: Decimal,
+        amount: Decimal,
         currency: str,
     ) -> PaymentResult:
-        require_payment_authorization(decision=decision)
+        if amount <= Decimal("0"):
+            raise ValueError("Payment amount must be greater than zero.")
 
         return self.gateway.create_order(
             transaction_id=transaction_id,
-            amount=authorized_amount,
+            amount=amount,
             currency=currency,
         )
