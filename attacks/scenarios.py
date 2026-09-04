@@ -104,7 +104,7 @@ def default_scenarios() -> tuple[AttackScenario, ...]:
             name="replay_attack",
             attack_type=AttackType.REPLAY,
             description="Previously consumed transaction identity is reused.",
-            expected_decision="UNIMPLEMENTED",
+            expected_decision="BLOCK",
             payload={
                 "price_mode": "normal",
                 "velocity_mode": "normal",

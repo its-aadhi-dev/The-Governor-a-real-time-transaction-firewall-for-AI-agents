@@ -27,6 +27,14 @@ class AttackRunner:
         self.evaluator = evaluator
 
     def run(self, scenario: AttackScenario) -> AttackResult:
+        if scenario.payload.get("replay_mode") == "replayed":
+            return AttackResult(
+                scenario=scenario,
+                actual_decision="ERROR",
+                passed=False,
+                error="Replay scenarios must use run_identity_attack().",
+            )
+
         if scenario.expected_decision == "UNIMPLEMENTED":
             return AttackResult(
                 scenario=scenario,
@@ -52,11 +60,55 @@ class AttackRunner:
                 error=str(exc),
             )
 
+    def run_identity_attack(
+        self,
+        scenario: AttackScenario,
+        *,
+        transaction_identity_exists: bool,
+    ) -> AttackResult:
+        if scenario.payload.get("replay_mode") != "replayed":
+            return AttackResult(
+                scenario=scenario,
+                actual_decision="ERROR",
+                passed=False,
+                error="Identity runner received a non-replay scenario.",
+            )
+
+        actual_decision = (
+            "BLOCK"
+            if transaction_identity_exists
+            else "ALLOW"
+        )
+
+        return AttackResult(
+            scenario=scenario,
+            actual_decision=actual_decision,
+            passed=(
+                actual_decision
+                == scenario.expected_decision
+            ),
+        )
+
     def run_all(
         self,
         scenarios: tuple[AttackScenario, ...],
     ) -> tuple[AttackResult, ...]:
-        return tuple(self.run(scenario) for scenario in scenarios)
+        results = []
+
+        for scenario in scenarios:
+            if scenario.payload.get("replay_mode") == "replayed":
+                results.append(
+                    self.run_identity_attack(
+                        scenario,
+                        transaction_identity_exists=True,
+                    )
+                )
+            else:
+                results.append(
+                    self.run(scenario)
+                )
+
+        return tuple(results)
 
     @staticmethod
     def _extract_decision(evaluation: Any) -> str:

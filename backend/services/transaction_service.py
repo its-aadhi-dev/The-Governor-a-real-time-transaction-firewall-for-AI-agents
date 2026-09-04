@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
+from backend.canon.replay import ReplayGuard
 from backend.core.models import TransactionIntent
 from backend.core.events import TRANSACTION_CREATED
 from backend.database.models.transaction import TransactionModel
@@ -26,6 +27,7 @@ class TransactionService:
 		self.negotiations = NegotiationRepository(db)
 		self.transactions = TransactionRepository(db)
 		self.events = EventRepository(db)
+		self.replay_guard = ReplayGuard()
 
 	def create_transaction(self, intent: TransactionIntent) -> TransactionModel:
 		buyer = self.agents.get(intent.buyer_agent_id)
@@ -56,9 +58,20 @@ class TransactionService:
 		):
 			raise ValueError("Negotiation does not match the transaction participants or item.")
 
-		existing = self.transactions.get_by_idempotency_key(intent.idempotency_key)
+		existing = self.transactions.get_by_idempotency_key(
+			intent.idempotency_key
+		)
+
 		if existing is not None:
 			return existing
+
+		existing_identity = self.transactions.get(
+			intent.transaction_id
+		)
+
+		self.replay_guard.require_fresh(
+			transaction_exists=existing_identity is not None
+		)
 
 		transaction = self.transactions.create(
 			transaction_id=intent.transaction_id,

@@ -14,7 +14,7 @@ def test_attack_suite_runs_against_real_governor():
     assert by_name["velocity_attack"].actual_decision == "BLOCK"
     assert by_name["reputation_attack"].actual_decision == "REVIEW"
     assert by_name["collusion_attack"].actual_decision == "REVIEW"
-    assert by_name["replay_attack"].actual_decision == "UNIMPLEMENTED"
+    assert by_name["replay_attack"].actual_decision == "BLOCK"
 
 
 def test_attack_suite_reports_implemented_controls_as_passes():
@@ -22,7 +22,25 @@ def test_attack_suite_reports_implemented_controls_as_passes():
         default_scenarios()
     )
 
-    implemented = [
-        result for result in results if result.actual_decision != "UNIMPLEMENTED"
-    ]
-    assert all(result.passed for result in implemented)
+    assert all(result.passed for result in results)
+
+
+def test_replay_attack_is_blocked_by_identity_boundary():
+    from attacks.runner import AttackRunner
+    from attacks.scenarios import default_scenarios
+
+    replay = next(
+        scenario
+        for scenario in default_scenarios()
+        if scenario.name == "replay_attack"
+    )
+
+    runner = AttackRunner(lambda _: None)
+
+    result = runner.run_identity_attack(
+        replay,
+        transaction_identity_exists=True,
+    )
+
+    assert result.actual_decision == "BLOCK"
+    assert result.passed is True
