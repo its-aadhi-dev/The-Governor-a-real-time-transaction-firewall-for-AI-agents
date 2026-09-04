@@ -647,6 +647,7 @@ class PaymentAuthorization(GovernorBaseModel):
 
 class PaymentStatus(str, Enum):
     CREATED = "CREATED"
+    PENDING = "PENDING"
     AUTHORIZED = "AUTHORIZED"
     CAPTURED = "CAPTURED"
     FAILED = "FAILED"
@@ -686,6 +687,16 @@ class PaymentResult(GovernorBaseModel):
     )
 
     provider_reference: str | None = Field(
+        default=None,
+        max_length=200,
+    )
+
+    order_id: str | None = Field(
+        default=None,
+        max_length=200,
+    )
+
+    payment_id: str | None = Field(
         default=None,
         max_length=200,
     )
