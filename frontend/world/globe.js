@@ -1,13 +1,14 @@
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+import * as THREE from "three";
 import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js";
 
 export class Globe {
-	constructor(container) {
+	constructor(container, { onNodeSelected = () => {} } = {}) {
 		if (!container) {
 			throw new Error("Globe container is required.");
 		}
 
 		this.container = container;
+		this.onNodeSelected = onNodeSelected;
 		this.scene = new THREE.Scene();
 		this.camera = new THREE.PerspectiveCamera(
 			42,
@@ -21,6 +22,10 @@ export class Globe {
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 		this.renderer.setSize(container.clientWidth, container.clientHeight);
 		container.appendChild(this.renderer.domElement);
+		this.raycaster = new THREE.Raycaster();
+		this.pointer = new THREE.Vector2();
+		this.handlePointerDown = this.handlePointerDown.bind(this);
+		this.renderer.domElement.addEventListener("pointerdown", this.handlePointerDown);
 
 		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 		this.controls.enableDamping = true;
@@ -150,6 +155,17 @@ export class Globe {
 		);
 	}
 
+	handlePointerDown(event) {
+		const rect = this.renderer.domElement.getBoundingClientRect();
+		this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+		this.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+		this.raycaster.setFromCamera(this.pointer, this.camera);
+		const intersections = this.raycaster.intersectObjects(this.nodeGroup.children, true);
+		if (!intersections.length) return;
+		const node = intersections[0].object.userData.node;
+		if (node) this.onNodeSelected(node);
+	}
+
 	handleResize() {
 		const width = this.container.clientWidth;
 		const height = this.container.clientHeight;
@@ -166,6 +182,7 @@ export class Globe {
 	}
 
 	destroy() {
+		this.renderer.domElement.removeEventListener("pointerdown", this.handlePointerDown);
 		window.removeEventListener("resize", this.handleResize);
 		this.controls.dispose();
 		this.renderer.dispose();

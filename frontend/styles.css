@@ -131,3 +131,40 @@ p {
 		bottom: 42px;
 	}
 }
+
+.world-back {
+	position: absolute;
+	top: 76px;
+	left: 32px;
+	z-index: 10;
+	display: none;
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	background: rgba(5, 12, 20, 0.72);
+	color: #ffffff;
+	padding: 10px 14px;
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	cursor: pointer;
+	backdrop-filter: blur(12px);
+}
+
+.commerce-world-active .world-back {
+	display: block;
+}
+
+.commerce-world-active .world-overlay {
+	bottom: 48px;
+}
+
+.commerce-world-active .world-overlay h1 {
+	text-transform: uppercase;
+}
+
+@media (max-width: 700px) {
+	.world-back {
+		top: 64px;
+		left: 18px;
+	}
+}
