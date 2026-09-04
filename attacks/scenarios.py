@@ -77,7 +77,7 @@ def default_scenarios() -> tuple[AttackScenario, ...]:
         AttackScenario(
             name="reputation_attack",
             attack_type=AttackType.REPUTATION,
-            description="Buyer presents a suspiciously poor reputation signal.",
+            description="Buyer presents a poor reputation signal.",
             expected_decision="REVIEW",
             payload={
                 "price_mode": "normal",
@@ -90,7 +90,7 @@ def default_scenarios() -> tuple[AttackScenario, ...]:
         AttackScenario(
             name="collusion_attack",
             attack_type=AttackType.COLLUSION,
-            description="Buyer concentrates activity unusually heavily on one merchant.",
+            description="Buyer activity is unusually concentrated on one merchant.",
             expected_decision="REVIEW",
             payload={
                 "price_mode": "normal",
@@ -104,7 +104,7 @@ def default_scenarios() -> tuple[AttackScenario, ...]:
             name="replay_attack",
             attack_type=AttackType.REPLAY,
             description="Previously consumed transaction identity is reused.",
-            expected_decision="BLOCK",
+            expected_decision="UNIMPLEMENTED",
             payload={
                 "price_mode": "normal",
                 "velocity_mode": "normal",

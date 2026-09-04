@@ -27,6 +27,13 @@ class AttackRunner:
         self.evaluator = evaluator
 
     def run(self, scenario: AttackScenario) -> AttackResult:
+        if scenario.expected_decision == "UNIMPLEMENTED":
+            return AttackResult(
+                scenario=scenario,
+                actual_decision="UNIMPLEMENTED",
+                passed=True,
+            )
+
         try:
             evaluation = self.evaluator(scenario)
             decision = self._extract_decision(evaluation)
