@@ -152,3 +152,29 @@ class TransactionRepository:
 		)
 
 		return int(self.db.scalar(statement) or 0)
+
+	def count_buyer_transactions(
+		self,
+		*,
+		buyer_agent_id: str,
+	) -> int:
+		statement = select(func.count()).select_from(TransactionModel).where(
+			TransactionModel.buyer_agent_id == buyer_agent_id,
+			TransactionModel.status.in_(VELOCITY_COUNTED_STATUSES),
+		)
+
+		return int(self.db.scalar(statement) or 0)
+
+	def count_buyer_merchant_transactions(
+		self,
+		*,
+		buyer_agent_id: str,
+		merchant_id: str,
+	) -> int:
+		statement = select(func.count()).select_from(TransactionModel).where(
+			TransactionModel.buyer_agent_id == buyer_agent_id,
+			TransactionModel.merchant_agent_id == merchant_id,
+			TransactionModel.status.in_(VELOCITY_COUNTED_STATUSES),
+		)
+
+		return int(self.db.scalar(statement) or 0)
