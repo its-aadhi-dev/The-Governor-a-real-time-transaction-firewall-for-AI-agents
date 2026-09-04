@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     # Razorpay
     # ============================================================
 
-    razorpay_key_id: SecretStr = Field(
+    razorpay_key_id: str = Field(
         ...,
         validation_alias="RAZORPAY_KEY_ID",
     )
