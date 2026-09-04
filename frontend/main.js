@@ -2,12 +2,16 @@ import { Globe } from "./world/globe.js";
 import { GlobeState } from "./world/globe-state.js";
 import { EventClient } from "./world/event-client.js";
 import { CommerceWorld } from "./world/commerce-world.js";
+import { TransactionView } from "./world/transaction-view.js";
 
 const container = document.getElementById("globe-container");
 const statusElement = document.getElementById("network-status");
 const worldOverlay = document.querySelector(".world-overlay");
 const backButton = document.getElementById("world-back");
 const globeState = new GlobeState();
+const governorContainer = document.createElement("div");
+governorContainer.id = "governor-visualization";
+document.body.appendChild(governorContainer);
 let globe = null;
 let commerceWorld = null;
 
@@ -50,19 +54,21 @@ function showGlobe() {
 	});
 }
 
-const eventClient = new EventClient({
-	onStatus(status) {
-		globeState.setConnected(status.connected);
-		statusElement.textContent = status.connected
-			? "LIVE EVENT STREAM"
-			: "NETWORK READY";
-		document.body.dataset.connected = String(status.connected);
-	},
+const eventClient = new EventClient();
+eventClient.onStatus((status) => {
+	globeState.setConnected(status.connected);
+	statusElement.textContent = status.connected ? "LIVE EVENT STREAM" : "NETWORK READY";
+	document.body.dataset.connected = String(status.connected);
+});
+eventClient.onEvent((event) => {
+	const action = globeState.applyEvent(event);
+	console.log("[Governor Event]", action);
+});
 
-	onEvent(event) {
-		const action = globeState.applyEvent(event);
-		console.log("[Governor Event]", action);
-	},
+const transactionView = new TransactionView({
+	container: governorContainer,
+	eventClient,
+	globeState,
 });
 
 showGlobe();
@@ -71,6 +77,7 @@ backButton.addEventListener("click", showGlobe);
 window.governorWorld = {
 	globeState,
 	eventClient,
+	transactionView,
 	getGlobe: () => globe,
 	getCommerceWorld: () => commerceWorld,
 	showGlobe,

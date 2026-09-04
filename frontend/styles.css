@@ -168,3 +168,131 @@ p {
 		left: 18px;
 	}
 }
+
+#governor-visualization {
+	position: fixed;
+	top: 92px;
+	right: 28px;
+	z-index: 20;
+	width: min(380px, calc(100vw - 40px));
+	pointer-events: auto;
+}
+
+.governor-panel {
+	padding: 18px;
+	background: rgba(3, 9, 16, 0.88);
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	backdrop-filter: blur(18px);
+	box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+.governor-panel-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 12px;
+	margin-bottom: 18px;
+}
+
+.governor-kicker,
+.governor-reason-label,
+.governor-decision-label {
+	font-size: 8px;
+	font-weight: 700;
+	letter-spacing: 0.16em;
+	opacity: 0.45;
+}
+
+.governor-title {
+	margin-top: 5px;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.1em;
+}
+
+.governor-state {
+	padding: 6px 8px;
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	font-size: 8px;
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	white-space: nowrap;
+}
+
+.governor-state-allow,
+.governor-state-paid { border-color: rgba(130, 255, 180, 0.5); }
+.governor-state-block,
+.governor-state-payment-failed { border-color: rgba(255, 100, 100, 0.6); }
+.governor-state-review,
+.governor-state-fallback { border-color: rgba(255, 210, 100, 0.55); }
+
+.governor-rule-list { display: grid; gap: 7px; }
+
+.governor-rule {
+	display: grid;
+	grid-template-columns: 10px 1fr auto;
+	align-items: center;
+	gap: 8px;
+	padding: 9px 10px;
+	background: rgba(255, 255, 255, 0.035);
+	font-size: 9px;
+	letter-spacing: 0.08em;
+}
+
+.governor-rule-indicator {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.25);
+}
+
+.governor-rule-status { font-size: 8px; opacity: 0.55; }
+.governor-rule-evaluating .governor-rule-indicator { animation: governor-pulse 1s infinite; }
+.governor-rule-allow .governor-rule-indicator,
+.governor-rule-block .governor-rule-indicator { opacity: 1; }
+
+.governor-decision {
+	margin-top: 14px;
+	padding: 15px;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.governor-decision-value {
+	margin-top: 6px;
+	font-size: 28px;
+	font-weight: 700;
+}
+
+.decision-review,
+.decision-fallback { opacity: 0.8; }
+
+.governor-details {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
+	margin-top: 14px;
+}
+
+.governor-detail { display: flex; flex-direction: column; gap: 5px; }
+.governor-detail span { font-size: 7px; letter-spacing: 0.13em; opacity: 0.4; }
+.governor-detail strong { font-size: 11px; font-weight: 600; }
+.governor-reason { margin-top: 14px; }
+#governor-reason-text { margin-top: 6px; font-size: 10px; line-height: 1.5; opacity: 0.65; }
+
+.transaction-connect { margin-bottom: 10px; }
+.transaction-connect-label { margin-bottom: 7px; font-size: 8px; font-weight: 700; letter-spacing: 0.16em; opacity: 0.45; }
+.transaction-connect-row { display: flex; gap: 6px; }
+.transaction-connect input { min-width: 0; flex: 1; border: 1px solid rgba(255, 255, 255, 0.12); outline: none; background: rgba(255, 255, 255, 0.04); color: #ffffff; padding: 9px 10px; font: inherit; font-size: 9px; }
+.transaction-connect input::placeholder { color: rgba(255, 255, 255, 0.32); }
+.transaction-connect button { border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.08); color: #ffffff; padding: 0 11px; font: inherit; font-size: 8px; font-weight: 700; letter-spacing: 0.1em; cursor: pointer; }
+.transaction-stream-status { margin-top: 6px; font-size: 7px; letter-spacing: 0.12em; opacity: 0.4; }
+
+@keyframes governor-pulse {
+	0%, 100% { opacity: 0.25; }
+	50% { opacity: 1; }
+}
+
+@media (max-width: 700px) {
+	#governor-visualization { top: auto; bottom: 18px; right: 18px; left: 18px; width: auto; }
+}
