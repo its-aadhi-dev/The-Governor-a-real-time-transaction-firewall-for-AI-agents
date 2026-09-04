@@ -5,7 +5,9 @@ def test_settings_load():
 
     assert settings.app_name == "The Governor"
 
-    assert settings.razorpay_key_id
+    assert (
+        settings.razorpay_key_id.get_secret_value()
+    )
 
     assert (
         settings.razorpay_key_secret.get_secret_value()
