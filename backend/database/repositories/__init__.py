@@ -11,6 +11,7 @@ from backend.database.repositories.transaction import (
 )
 from backend.database.repositories.velocity import VelocityRepository
 from backend.database.repositories.collusion import CollusionRepository
+from backend.database.repositories.ledger import LedgerRepository
 
 __all__ = [
 	"AgentRepository",
@@ -24,4 +25,5 @@ __all__ = [
 	"DuplicateTransactionError",
 	"VelocityRepository",
 	"CollusionRepository",
+	"LedgerRepository",
 ]

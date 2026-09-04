@@ -72,15 +72,10 @@ class GovernorStateService:
         minimum_observed_price: Optional[Decimal] = None,
         maximum_observed_price: Optional[Decimal] = None,
     ) -> GovernorState:
-        transaction_count = (
-            reputation.successful_transactions
-            + reputation.review_transactions
-            + reputation.blocked_transactions
-        )
         return GovernorState(
             agent_id=agent_id,
             reputation_score=reputation.trust_score,
-            transaction_count=transaction_count,
+            transaction_count=reputation.transaction_count,
             successful_transaction_count=reputation.successful_transactions,
             blocked_transaction_count=reputation.blocked_transactions,
             last_transaction_at=reputation.last_transaction_at,

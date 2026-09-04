@@ -1,8 +1,14 @@
 from __future__ import annotations
 
 from backend.canon.governor import Governor, GovernorEvaluation
+from backend.core.events import (
+    GOVERNOR_ALLOW,
+    GOVERNOR_BLOCK,
+    GOVERNOR_FALLBACK,
+    GOVERNOR_REVIEW,
+)
 from backend.core.governance import GovernanceContext
-from backend.core.models import TransactionStatus
+from backend.core.models import SystemDecision, TransactionStatus
 
 
 class GovernorService:
@@ -19,10 +25,12 @@ class GovernorService:
         governor: Governor,
         transaction_repository,
         lifecycle_service,
+        ledger_service=None,
     ) -> None:
         self.governor = governor
         self.transaction_repository = transaction_repository
         self.lifecycle_service = lifecycle_service
+        self.ledger_service = ledger_service
 
     def evaluate_transaction(
         self,
@@ -58,4 +66,24 @@ class GovernorService:
             evaluation.decision.decision,
             risk_score=evaluation.risk.score,
         )
+
+        if self.ledger_service is not None:
+            event_types = {
+                SystemDecision.ALLOW: GOVERNOR_ALLOW,
+                SystemDecision.REVIEW: GOVERNOR_REVIEW,
+                SystemDecision.BLOCK: GOVERNOR_BLOCK,
+                SystemDecision.FALLBACK: GOVERNOR_FALLBACK,
+            }
+            self.ledger_service.append(
+                event_type=event_types[evaluation.decision.decision],
+                transaction_id=context.transaction_id,
+                payload={
+                    "transaction_id": context.transaction_id,
+                    "decision": evaluation.decision.decision.value,
+                    "risk_score": str(evaluation.risk.score),
+                    "risk_level": evaluation.risk.level.value,
+                    "reason": evaluation.decision.reason,
+                    "policy_version": "1",
+                },
+            )
         return evaluation

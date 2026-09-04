@@ -36,7 +36,6 @@ class AgentReputationModel(Base):
         return (
             self.successful_transactions
             + self.review_transactions
-            + self.blocked_transactions
         )
 
     @property
