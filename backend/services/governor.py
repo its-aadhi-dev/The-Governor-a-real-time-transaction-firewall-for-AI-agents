@@ -9,6 +9,8 @@ from backend.core.events import (
 )
 from backend.core.governance import GovernanceContext
 from backend.core.models import SystemDecision, TransactionStatus
+from backend.payments.authorization import require_payment_authorization
+from backend.services.payment import PaymentService
 
 
 class GovernorService:
@@ -25,11 +27,13 @@ class GovernorService:
         governor: Governor,
         transaction_repository,
         lifecycle_service,
+        payment_service: PaymentService | None = None,
         ledger_service=None,
     ) -> None:
         self.governor = governor
         self.transaction_repository = transaction_repository
         self.lifecycle_service = lifecycle_service
+        self.payment_service = payment_service
         self.ledger_service = ledger_service
 
     def evaluate_transaction(
@@ -87,3 +91,56 @@ class GovernorService:
                 },
             )
         return evaluation
+
+    def execute_payment(self, *, context: GovernanceContext):
+        """
+        Create a provider order only for an ALLOW decision.
+
+        Successful order creation moves the transaction to
+        PAYMENT_PENDING; it does not mark the transaction as paid.
+        """
+        transaction = self.transaction_repository.get(context.transaction_id)
+
+        if transaction is None:
+            raise ValueError(
+                f"Transaction '{context.transaction_id}' was not found."
+            )
+
+        if transaction.decision != SystemDecision.ALLOW.value:
+            raise ValueError(
+                "Payment execution requires a completed ALLOW decision."
+            )
+
+        if self.payment_service is None:
+            raise RuntimeError(
+                "PaymentService is required to execute a payment."
+            )
+
+        require_payment_authorization(decision=SystemDecision.ALLOW)
+
+        if transaction.status != TransactionStatus.APPROVED.value:
+            raise ValueError(
+                "Payment execution requires an APPROVED transaction."
+            )
+
+        amount = transaction.authorized_price or transaction.requested_price
+        payment_result = self.payment_service.create_payment_order(
+            transaction_id=transaction.transaction_id,
+            amount=amount,
+            currency=transaction.currency,
+        )
+
+        self.transaction_repository.set_authorized_amount(transaction, amount)
+
+        if payment_result.order_id is None:
+            raise RuntimeError("Razorpay returned no order ID.")
+
+        self.transaction_repository.set_razorpay_order(
+            transaction,
+            order_id=payment_result.order_id,
+        )
+        self.lifecycle_service.mark_payment_pending(
+            transaction.transaction_id,
+        )
+
+        return payment_result
