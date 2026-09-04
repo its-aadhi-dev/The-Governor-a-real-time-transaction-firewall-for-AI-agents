@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta
+		name="viewport"
+		content="width=device-width, initial-scale=1.0"
+	>
+	<title>The Governor - Commerce Network</title>
+	<link rel="stylesheet" href="/styles.css">
+	<script type="importmap">
+		{
+			"imports": {
+				"three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"
+			}
+		}
+	</script>
+</head>
+<body>
+	<main class="world-shell">
+		<header class="world-header">
+			<div class="brand">THE GOVERNOR</div>
+
+			<div class="network-status">
+				<span class="status-dot"></span>
+				<span id="network-status">NETWORK READY</span>
+			</div>
+		</header>
+
+		<section id="globe-container" class="globe-container"></section>
+
+		<section class="world-overlay">
+			<div class="eyebrow">AGENTIC COMMERCE NETWORK</div>
+			<h1>Commerce, at planetary scale.</h1>
+			<p>A governed network for autonomous transactions.</p>
+		</section>
+	</main>
+
+	<script type="module" src="/main.js"></script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 from fastapi import Depends, FastAPI
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from fastapi.staticfiles import StaticFiles
 
 from backend.api.routes.events import router as events_router
 from backend.api.routes.transactions import router as transactions_router
@@ -37,3 +38,10 @@ def database_health(db: Session = Depends(get_db)):
         "status": "ok",
         "database": "online",
     }
+
+
+app.mount(
+    "/",
+    StaticFiles(directory="frontend", html=True),
+    name="frontend",
+)
