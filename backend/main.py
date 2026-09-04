@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.api.routes.events import router as events_router
 from backend.api.routes.transactions import router as transactions_router
+from backend.api.routes.voice import router as voice_router
 from backend.database.session import get_db
 
 from backend.events import session_hooks  # noqa: F401
@@ -21,6 +22,7 @@ app = FastAPI(
 
 app.include_router(transactions_router, prefix="/api/v1")
 app.include_router(events_router, prefix="/api/v1")
+app.include_router(voice_router, prefix="/api/v1")
 
 @app.get("/health")
 def health():
