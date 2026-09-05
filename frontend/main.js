@@ -19,40 +19,40 @@ let globe = null;
 let commerceWorld = null;
 
 const regions = {
-        asia: {
-                id: "asia",
-                label: "ASIA",
-                lat: 20,
-                lon: 100,
-        },
+	asia: {
+		id: "asia",
+		label: "ASIA",
+		lat: 20,
+		lon: 100,
+	},
 
-        europe: {
-                id: "europe",
-                label: "EUROPE",
-                lat: 50,
-                lon: 15,
-        },
+	europe: {
+		id: "europe",
+		label: "EUROPE",
+		lat: 50,
+		lon: 15,
+	},
 
-        americas: {
-                id: "americas",
-                label: "AMERICAS",
-                lat: 35,
-                lon: -100,
-        },
+	americas: {
+		id: "america",
+		label: "AMERICA",
+		lat: 35,
+		lon: -100,
+	},
 };
 
 const nodeRegions = {
-        mumbai: regions.asia,
-        singapore: regions.asia,
-        tokyo: regions.asia,
-        dubai: regions.asia,
+	mumbai: regions.asia,
+	singapore: regions.asia,
+	tokyo: regions.asia,
+	dubai: regions.asia,
 
-        london: regions.europe,
-        frankfurt: regions.europe,
+	london: regions.europe,
+	frankfurt: regions.europe,
 
-        "new-york": regions.americas,
-        "san-francisco": regions.americas,
-        "sao-paulo": regions.americas,
+	"new-york": regions.americas,
+	"san-francisco": regions.americas,
+	"sao-paulo": regions.americas,
 };
 
 async function loadVoiceMarket() {
@@ -164,22 +164,22 @@ function showGlobe() {
 	`;
 	globe = new Globe(container, {
 		onNodeSelected(node) {
-        const resolvedRegion =
-                nodeRegions[node.id];
+			const resolvedRegion =
+				nodeRegions[node.id];
 
-        console.log(
-                "[Network Node]",
-                node.label,
-                "→",
-                resolvedRegion?.label,
-        );
+			console.log(
+				"[Network Node]",
+				node.label,
+				"→",
+				resolvedRegion?.label,
+			);
 
-        if (resolvedRegion) {
-                showCommerceWorld(
-                        resolvedRegion,
-                );
-        }
-},
+			if (resolvedRegion) {
+				showCommerceWorld(
+					resolvedRegion,
+				);
+			}
+		},
 	});
 }
 
@@ -391,8 +391,25 @@ window.addEventListener(
 
 
 
-showGlobe();
-backButton.addEventListener("click", showGlobe);
+const accessCommerceButton =
+	document.getElementById("access-commerce");
+
+accessCommerceButton?.addEventListener(
+	"click",
+	() => {
+		document.body.classList.add(
+			"commerce-network-active",
+		);
+
+		showGlobe();
+	},
+);
+
+backButton.addEventListener(
+	"click",
+	showGlobe,
+);
+
 
 window.governorWorld = {
 	globeState,
@@ -408,3 +425,4 @@ window.governorWorld = {
 	getCommerceWorld: () => commerceWorld,
 	showGlobe,
 };
+
