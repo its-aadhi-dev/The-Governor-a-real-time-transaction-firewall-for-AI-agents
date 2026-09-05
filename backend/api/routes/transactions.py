@@ -8,15 +8,19 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from backend.core.config import settings
+from backend.core.events import (
+    PAYMENT_VERIFICATION_FAILED,
+    PAYMENT_VERIFIED,
+)
 from backend.core.governance import GovernanceContext
 from backend.core.models import TransactionIntent
 from backend.database.repositories.catalog import CatalogRepository
 from backend.database.repositories.event import EventRepository
+from backend.database.repositories.ledger import LedgerRepository
 from backend.database.repositories.transaction import DuplicateTransactionError
 from backend.database.session import get_db
 from backend.services.governor_factory import build_governor_service
 from backend.services.transaction_service import TransactionService
-from backend.services.governor_factory import build_governor_service
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
@@ -211,44 +215,85 @@ def verify_payment(
         )
 
     governor_service = build_governor_service(db)
+    events = EventRepository(db)
 
-    try:
-        valid = governor_service.payment_service.verify_payment_signature(
-            order_id=transaction.razorpay_order_id,
-            payment_id=request.razorpay_payment_id,
-            signature=request.razorpay_signature,
+    valid = governor_service.payment_service.verify_payment_signature(
+        order_id=transaction.razorpay_order_id,
+        payment_id=request.razorpay_payment_id,
+        signature=request.razorpay_signature,
+    )
+
+    if not valid:
+        events.append(
+            transaction_id=transaction.transaction_id,
+            event_type=PAYMENT_VERIFICATION_FAILED,
+            actor_id="governor",
+            payload={
+                "order_id": transaction.razorpay_order_id,
+                "payment_id": request.razorpay_payment_id,
+                "reason": "Invalid Razorpay payment signature.",
+            },
         )
 
-        if not valid:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid Razorpay payment signature.",
-            )
-
-        amount = (
-            transaction.authorized_price
-            or transaction.requested_price
-        )
-
-        governor_service.lifecycle_service.mark_paid(
-            transaction.transaction_id,
-            amount=amount,
-            provider_reference=request.razorpay_payment_id,
+        governor_service.ledger_service.append(
+            event_type=PAYMENT_VERIFICATION_FAILED,
+            transaction_id=transaction.transaction_id,
+            payload={
+                "order_id": transaction.razorpay_order_id,
+                "payment_id": request.razorpay_payment_id,
+                "reason": "Invalid Razorpay payment signature.",
+            },
         )
 
         db.commit()
 
-    except HTTPException:
-        db.rollback()
-        raise
-
-    except Exception as exc:
-        db.rollback()
-
         raise HTTPException(
-            status_code=500,
-            detail=f"Payment verification failed: {exc}",
-        ) from exc
+            status_code=400,
+            detail="Invalid Razorpay payment signature.",
+        )
+
+    events.append(
+        transaction_id=transaction.transaction_id,
+        event_type=PAYMENT_VERIFIED,
+        actor_id="governor",
+        payload={
+            "order_id": transaction.razorpay_order_id,
+            "payment_id": request.razorpay_payment_id,
+        },
+    )
+
+    governor_service.ledger_service.append(
+        event_type=PAYMENT_VERIFIED,
+        transaction_id=transaction.transaction_id,
+        payload={
+            "order_id": transaction.razorpay_order_id,
+            "payment_id": request.razorpay_payment_id,
+        },
+    )
+
+    amount = (
+        transaction.authorized_price
+        or transaction.requested_price
+    )
+
+    governor_service.lifecycle_service.mark_paid(
+        transaction.transaction_id,
+        amount=amount,
+        provider_reference=request.razorpay_payment_id,
+    )
+
+    governor_service.ledger_service.append(
+        event_type="PAYMENT_PAID",
+        transaction_id=transaction.transaction_id,
+        payload={
+            "order_id": transaction.razorpay_order_id,
+            "payment_id": request.razorpay_payment_id,
+            "amount": str(amount),
+            "currency": transaction.currency,
+        },
+    )
+
+    db.commit()
 
     return {
         "transaction_id": transaction.transaction_id,
@@ -258,6 +303,71 @@ def verify_payment(
         "order_id": transaction.razorpay_order_id,
         "amount": str(amount),
         "currency": transaction.currency,
+    }
+
+@router.get("/{transaction_id}/audit")
+def get_transaction_audit(
+    transaction_id: str,
+    db: Session = Depends(get_db),
+):
+    transaction = TransactionService(db).transactions.get(
+        transaction_id
+    )
+
+    if transaction is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Transaction not found.",
+        )
+
+    events = EventRepository(db).list_for_transaction(
+        transaction_id
+    )
+
+    ledger_repository = LedgerRepository(db)
+
+    ledger_blocks = ledger_repository.list_for_transaction(
+        transaction_id
+    )
+
+    from backend.services.ledger import LedgerService
+    from backend.canon.crypto.signer import LedgerSigner
+
+    # Blocks contain their own public signing keys. A temporary
+    # verifier is enough because verification does not require
+    # the private signing key.
+    ledger_service = LedgerService(
+        repository=ledger_repository,
+        signer=LedgerSigner.generate(),
+    )
+
+    return {
+        "transaction_id": transaction_id,
+        "events": [
+            {
+                "event_id": event.event_id,
+                "event_type": event.event_type,
+                "actor_id": event.actor_id,
+                "sequence_number": event.sequence_number,
+                "payload": event.payload,
+                "created_at": event.created_at.isoformat(),
+            }
+            for event in events
+        ],
+        "ledger": [
+            {
+                "sequence_number": block.sequence_number,
+                "event_type": block.event_type,
+                "block_hash": block.block_hash,
+                "previous_hash": block.previous_hash,
+                "signature": block.signature,
+                "signer_public_key": block.signer_public_key,
+                "created_at": block.created_at.isoformat(),
+                "valid": ledger_service.verify_block(block),
+            }
+            for block in ledger_blocks
+        ],
+        "ledger_integrity": ledger_service.verify_chain(),
     }
 
     
