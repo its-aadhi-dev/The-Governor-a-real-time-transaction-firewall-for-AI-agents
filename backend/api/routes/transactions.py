@@ -21,6 +21,9 @@ from backend.database.repositories.transaction import DuplicateTransactionError
 from backend.database.session import get_db
 from backend.services.governor_factory import build_governor_service
 from backend.services.transaction_service import TransactionService
+from backend.database.repositories.negotiation import (
+    NegotiationRepository,
+)
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
@@ -81,29 +84,149 @@ def get_transaction_events(
     }
 
 
-@router.get("/{transaction_id}")
-def get_transaction(
+@router.get("/{transaction_id}/audit")
+def get_transaction_audit(
     transaction_id: str,
     db: Session = Depends(get_db),
 ):
-    transaction = TransactionService(db).transactions.get(transaction_id)
+    transaction_service = TransactionService(db)
+
+    transaction = transaction_service.transactions.get(
+        transaction_id
+    )
+
     if transaction is None:
-        raise HTTPException(status_code=404, detail="Transaction not found.")
+        raise HTTPException(
+            status_code=404,
+            detail="Transaction not found.",
+        )
+
+    events = EventRepository(db).list_for_transaction(
+        transaction_id
+    )
+
+    negotiation_repository = NegotiationRepository(db)
+
+    negotiation = negotiation_repository.get(
+        transaction.negotiation_id
+    )
+
+    negotiation_messages = []
+
+    if negotiation is not None:
+        negotiation_messages = (
+            negotiation_repository.list_messages(
+                negotiation.negotiation_id
+            )
+        )
+
+    ledger_repository = LedgerRepository(db)
+
+    ledger_blocks = ledger_repository.list_for_transaction(
+        transaction_id
+    )
+
+    ledger_service = build_governor_service(
+        db
+    ).ledger_service
 
     return {
-        "transaction_id": transaction.transaction_id,
-        "status": transaction.status,
-        "decision": transaction.decision,
-        "requested_price": str(transaction.requested_price),
-        "authorized_price": (
-            str(transaction.authorized_price)
-            if transaction.authorized_price is not None
-            else None
-        ),
-        "currency": transaction.currency,
-        "razorpay_order_id": transaction.razorpay_order_id,
-    }
+        "transaction_id": transaction_id,
 
+        "transaction": {
+            "status": transaction.status,
+            "decision": transaction.decision,
+            "requested_price": str(
+                transaction.requested_price
+            ),
+            "authorized_price": (
+                str(transaction.authorized_price)
+                if transaction.authorized_price
+                is not None
+                else None
+            ),
+            "currency": transaction.currency,
+            "razorpay_order_id":
+                transaction.razorpay_order_id,
+        },
+
+        "negotiation": {
+            "negotiation_id": (
+                negotiation.negotiation_id
+                if negotiation is not None
+                else transaction.negotiation_id
+            ),
+            "status": (
+                negotiation.status
+                if negotiation is not None
+                else None
+            ),
+            "proposal_count": (
+                negotiation.proposal_count
+                if negotiation is not None
+                else 0
+            ),
+            "messages": [
+                {
+                    "message_id": message.message_id,
+                    "agent_id": message.agent_id,
+                    "message_type": message.message_type,
+                    "message": message.message,
+                    "proposed_price": (
+                        str(message.proposed_price)
+                        if message.proposed_price
+                        is not None
+                        else None
+                    ),
+                    "currency": message.currency,
+                    "sequence_number":
+                        message.sequence_number,
+                }
+                for message in negotiation_messages
+            ],
+        },
+
+        "events": [
+            {
+                "event_id": event.event_id,
+                "event_type": event.event_type,
+                "actor_id": event.actor_id,
+                "sequence_number":
+                    event.sequence_number,
+                "payload": event.payload,
+                "created_at":
+                    event.created_at.isoformat(),
+            }
+            for event in events
+        ],
+
+        "ledger": [
+            {
+                "sequence_number":
+                    block.sequence_number,
+                "event_type":
+                    block.event_type,
+                "block_hash":
+                    block.block_hash,
+                "previous_hash":
+                    block.previous_hash,
+                "signature":
+                    block.signature,
+                "signer_public_key":
+                    block.signer_public_key,
+                "created_at":
+                    block.created_at.isoformat(),
+                "valid":
+                    ledger_service.verify_block(
+                        block
+                    ),
+            }
+            for block in ledger_blocks
+        ],
+
+        "ledger_integrity":
+            ledger_service.verify_chain(),
+    }
 
 @router.post("/{transaction_id}/checkout")
 def checkout_transaction(
@@ -305,69 +428,4 @@ def verify_payment(
         "currency": transaction.currency,
     }
 
-@router.get("/{transaction_id}/audit")
-def get_transaction_audit(
-    transaction_id: str,
-    db: Session = Depends(get_db),
-):
-    transaction = TransactionService(db).transactions.get(
-        transaction_id
-    )
 
-    if transaction is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Transaction not found.",
-        )
-
-    events = EventRepository(db).list_for_transaction(
-        transaction_id
-    )
-
-    ledger_repository = LedgerRepository(db)
-
-    ledger_blocks = ledger_repository.list_for_transaction(
-        transaction_id
-    )
-
-    from backend.services.ledger import LedgerService
-    from backend.canon.crypto.signer import LedgerSigner
-
-    # Blocks contain their own public signing keys. A temporary
-    # verifier is enough because verification does not require
-    # the private signing key.
-    ledger_service = LedgerService(
-        repository=ledger_repository,
-        signer=LedgerSigner.generate(),
-    )
-
-    return {
-        "transaction_id": transaction_id,
-        "events": [
-            {
-                "event_id": event.event_id,
-                "event_type": event.event_type,
-                "actor_id": event.actor_id,
-                "sequence_number": event.sequence_number,
-                "payload": event.payload,
-                "created_at": event.created_at.isoformat(),
-            }
-            for event in events
-        ],
-        "ledger": [
-            {
-                "sequence_number": block.sequence_number,
-                "event_type": block.event_type,
-                "block_hash": block.block_hash,
-                "previous_hash": block.previous_hash,
-                "signature": block.signature,
-                "signer_public_key": block.signer_public_key,
-                "created_at": block.created_at.isoformat(),
-                "valid": ledger_service.verify_block(block),
-            }
-            for block in ledger_blocks
-        ],
-        "ledger_integrity": ledger_service.verify_chain(),
-    }
-
-    

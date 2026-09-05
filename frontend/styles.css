@@ -613,3 +613,767 @@ body:not(.commerce-world-active) #voice-control {
 	max-width: 300px;
 	font-size: 12px;
 }
+
+/* ============================================================
+   TRANSACTION CONSOLE
+   ============================================================ */
+
+#governor-visualization {
+	position: fixed;
+	top: 92px;
+	right: 24px;
+	bottom: 24px;
+	z-index: 20;
+	width: min(430px, calc(100vw - 48px));
+	pointer-events: auto;
+}
+
+.transaction-console {
+	height: 100%;
+	overflow-y: auto;
+	padding: 16px;
+	background: rgba(3, 9, 16, 0.94);
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	backdrop-filter: blur(18px);
+	box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+}
+
+.console-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 12px;
+	padding-bottom: 14px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.console-kicker,
+.console-section-header,
+.governor-decision-label,
+.governor-reason-label,
+.transaction-summary span,
+.payment-provider {
+	font-family: Arial, sans-serif;
+	font-size: 8px;
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	opacity: 0.45;
+}
+
+.console-title {
+	margin-top: 5px;
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+}
+
+.console-state {
+	padding: 6px 8px;
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	font-family: Arial, sans-serif;
+	font-size: 8px;
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	white-space: nowrap;
+}
+
+.console-section {
+	padding: 14px 0;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.console-section-header {
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: 9px;
+}
+
+.console-section-header span:last-child {
+	opacity: 0.7;
+}
+
+.console-empty {
+	padding: 8px 0;
+	font-family: Arial, sans-serif;
+	font-size: 8px;
+	opacity: 0.3;
+}
+
+.negotiation-feed {
+	display: grid;
+	gap: 6px;
+}
+
+.negotiation-message {
+	display: grid;
+	grid-template-columns: 76px 1fr;
+	gap: 8px;
+	padding: 8px 9px;
+	background: rgba(255, 255, 255, 0.035);
+	border-left: 2px solid rgba(255, 255, 255, 0.16);
+}
+
+.negotiation-actor {
+	font-family: Arial, sans-serif;
+	font-size: 8px;
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	opacity: 0.48;
+}
+
+.negotiation-content {
+	display: flex;
+	justify-content: space-between;
+	gap: 8px;
+	font-family: Arial, sans-serif;
+	font-size: 9px;
+	letter-spacing: 0.08em;
+}
+
+.negotiation-content strong {
+	font-weight: 700;
+}
+
+.transaction-summary {
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+	gap: 8px;
+}
+
+.transaction-summary div {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.transaction-summary strong {
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+	font-weight: 600;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.payment-panel {
+	padding: 10px;
+	background: rgba(255, 255, 255, 0.035);
+}
+
+.payment-amount {
+	margin-top: 6px;
+	font-size: 24px;
+	font-weight: 700;
+}
+
+.payment-order {
+	margin-top: 5px;
+	font-family: Arial, sans-serif;
+	font-size: 8px;
+	opacity: 0.45;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.ledger-feed {
+	display: grid;
+	gap: 4px;
+}
+
+.ledger-row {
+	display: grid;
+	grid-template-columns: 25px 1fr 15px;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 0;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+	font-family: Arial, sans-serif;
+	font-size: 8px;
+}
+
+.ledger-row span {
+	opacity: 0.35;
+}
+
+.ledger-row strong {
+	font-weight: 500;
+	letter-spacing: 0.07em;
+}
+
+.ledger-row b {
+	text-align: right;
+}
+
+.governor-rule-list {
+	display: grid;
+	gap: 5px;
+}
+
+.governor-rule {
+	display: grid;
+	grid-template-columns: 9px 1fr auto;
+	align-items: center;
+	gap: 7px;
+	padding: 7px 8px;
+	background: rgba(255, 255, 255, 0.035);
+	font-family: Arial, sans-serif;
+	font-size: 8px;
+	letter-spacing: 0.08em;
+}
+
+.governor-rule-indicator {
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.25);
+}
+
+.governor-rule-status {
+	font-size: 7px;
+	opacity: 0.5;
+}
+
+.governor-decision {
+	margin-top: 11px;
+	padding: 11px 0;
+	border-top: 1px solid rgba(255, 255, 255, 0.08);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.governor-decision-value {
+	margin-top: 4px;
+	font-size: 28px;
+	font-weight: 700;
+}
+
+.governor-details {
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+	gap: 8px;
+	margin-top: 11px;
+}
+
+.governor-detail {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.governor-detail span {
+	font-family: Arial, sans-serif;
+	font-size: 7px;
+	letter-spacing: 0.1em;
+	opacity: 0.4;
+}
+
+.governor-detail strong {
+	font-family: Arial, sans-serif;
+	font-size: 10px;
+	font-weight: 600;
+}
+
+.governor-reason {
+	margin-top: 11px;
+}
+
+#governor-reason-text {
+	margin-top: 5px;
+	font-family: Arial, sans-serif;
+	font-size: 9px;
+	line-height: 1.45;
+	opacity: 0.62;
+}
+
+@media (max-width: 900px) {
+	#governor-visualization {
+		top: auto;
+		left: 18px;
+		right: 18px;
+		bottom: 18px;
+		width: auto;
+		height: min(55vh, 500px);
+	}
+}
+
+@media (max-width: 700px) {
+	#governor-visualization {
+		height: 50vh;
+	}
+}
+
+/* ============================================================
+   GOVERNOR TRANSACTION CONSOLE
+   Step 26D visual layer
+   ============================================================ */
+
+.transaction-connect {
+	position: absolute;
+	top: 22px;
+	right: 22px;
+	width: min(430px, 34vw);
+	z-index: 30;
+	pointer-events: none;
+}
+
+.transaction-console-label {
+	display: inline-block;
+	margin-bottom: 8px;
+	padding: 7px 10px;
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	border-radius: 4px;
+	background: rgba(8, 10, 14, 0.82);
+	color: rgba(255, 255, 255, 0.64);
+	font-size: 9px;
+	font-weight: 700;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	backdrop-filter: blur(10px);
+}
+
+.transaction-console-status {
+	display: flex;
+	justify-content: flex-end;
+}
+
+.transaction-stream-status {
+	padding: 6px 9px;
+	border-radius: 3px;
+	background: rgba(8, 10, 14, 0.82);
+	color: rgba(255, 255, 255, 0.5);
+	font-size: 8px;
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	backdrop-filter: blur(10px);
+}
+
+.governor-panel {
+	position: absolute;
+	top: 76px;
+	right: 22px;
+	bottom: 22px;
+	width: min(430px, 34vw);
+	min-width: 340px;
+	overflow-y: auto;
+	overflow-x: hidden;
+	z-index: 25;
+
+	padding: 18px;
+
+	background:
+		linear-gradient(180deg,
+			rgba(11, 14, 19, 0.97),
+			rgba(7, 9, 13, 0.94));
+
+	border: 1px solid rgba(255, 255, 255, 0.10);
+	border-radius: 8px;
+
+	box-shadow:
+		0 20px 50px rgba(0, 0, 0, 0.40),
+		inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+	backdrop-filter: blur(18px);
+
+	scrollbar-width: thin;
+	scrollbar-color:
+		rgba(255, 255, 255, 0.18) transparent;
+}
+
+.governor-panel::-webkit-scrollbar {
+	width: 5px;
+}
+
+.governor-panel::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.governor-panel::-webkit-scrollbar-thumb {
+	background: rgba(255, 255, 255, 0.16);
+	border-radius: 10px;
+}
+
+.governor-panel-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+	padding-bottom: 15px;
+	margin-bottom: 14px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.governor-kicker {
+	margin-bottom: 4px;
+	color: rgba(255, 255, 255, 0.42);
+	font-size: 8px;
+	font-weight: 700;
+	letter-spacing: 0.22em;
+}
+
+.governor-title {
+	color: #ffffff;
+	font-size: 15px;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+}
+
+.governor-state {
+	padding: 6px 8px;
+	border: 1px solid rgba(255, 255, 255, 0.10);
+	border-radius: 3px;
+	color: rgba(255, 255, 255, 0.72);
+	font-size: 8px;
+	font-weight: 800;
+	letter-spacing: 0.12em;
+	white-space: nowrap;
+}
+
+.governor-section {
+	margin-bottom: 12px;
+	padding: 12px;
+	border: 1px solid rgba(255, 255, 255, 0.07);
+	border-radius: 6px;
+	background: rgba(255, 255, 255, 0.018);
+}
+
+.governor-section-title {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin-bottom: 9px;
+	color: rgba(255, 255, 255, 0.42);
+	font-size: 8px;
+	font-weight: 800;
+	letter-spacing: 0.16em;
+}
+
+.governor-transaction-id {
+	overflow: hidden;
+	margin-bottom: 10px;
+	color: rgba(255, 255, 255, 0.90);
+	font-family: monospace;
+	font-size: 10px;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.governor-transaction-grid,
+.governor-payment-grid,
+.governor-details {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 8px;
+}
+
+.governor-transaction-grid>div,
+.governor-payment-grid>div,
+.governor-details>div {
+	min-width: 0;
+	padding: 8px;
+	border-radius: 4px;
+	background: rgba(255, 255, 255, 0.025);
+}
+
+.governor-transaction-grid span,
+.governor-payment-grid span,
+.governor-details span {
+	display: block;
+	margin-bottom: 4px;
+	color: rgba(255, 255, 255, 0.34);
+	font-size: 7px;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+}
+
+.governor-transaction-grid strong,
+.governor-payment-grid strong,
+.governor-details strong {
+	display: block;
+	overflow: hidden;
+	color: rgba(255, 255, 255, 0.90);
+	font-size: 10px;
+	font-weight: 700;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.governor-meta {
+	margin-bottom: 8px;
+	color: rgba(255, 255, 255, 0.38);
+	font-size: 8px;
+	letter-spacing: 0.07em;
+}
+
+.governor-negotiation {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.governor-negotiation-message {
+	padding: 8px;
+	border-left: 2px solid rgba(255, 255, 255, 0.14);
+	border-radius: 3px;
+	background: rgba(255, 255, 255, 0.025);
+}
+
+.governor-message-head {
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: 5px;
+	color: rgba(255, 255, 255, 0.40);
+	font-size: 7px;
+	font-weight: 800;
+	letter-spacing: 0.12em;
+}
+
+.governor-message-body {
+	color: rgba(255, 255, 255, 0.82);
+	font-size: 10px;
+	line-height: 1.4;
+}
+
+.governor-message-price {
+	margin-top: 5px;
+	color: rgba(255, 255, 255, 0.56);
+	font-family: monospace;
+	font-size: 9px;
+}
+
+.governor-rule-list {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.governor-rule {
+	display: grid;
+	grid-template-columns: 9px 1fr auto;
+	align-items: center;
+	gap: 7px;
+	min-height: 30px;
+	padding: 6px 8px;
+	border-radius: 4px;
+	background: rgba(255, 255, 255, 0.025);
+	transition:
+		background 140ms ease,
+		border-color 140ms ease;
+}
+
+.governor-rule>span:nth-child(2) {
+	color: rgba(255, 255, 255, 0.72);
+	font-size: 8px;
+	font-weight: 700;
+	letter-spacing: 0.10em;
+}
+
+.governor-rule-indicator {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.24);
+}
+
+.governor-rule-status {
+	color: rgba(255, 255, 255, 0.38);
+	font-size: 7px;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+}
+
+.governor-rule-allow .governor-rule-indicator {
+	background: #66d391;
+}
+
+.governor-rule-allow .governor-rule-status {
+	color: #66d391;
+}
+
+.governor-rule-review .governor-rule-indicator {
+	background: #e7bd63;
+}
+
+.governor-rule-review .governor-rule-status {
+	color: #e7bd63;
+}
+
+.governor-rule-block .governor-rule-indicator {
+	background: #e36b73;
+}
+
+.governor-rule-block .governor-rule-status {
+	color: #e36b73;
+}
+
+.governor-rule-fallback .governor-rule-indicator {
+	background: #76b7e8;
+}
+
+.governor-rule-fallback .governor-rule-status {
+	color: #76b7e8;
+}
+
+.governor-rule-evaluating .governor-rule-indicator {
+	background: #ffffff;
+	animation: governor-pulse 900ms ease-in-out infinite;
+}
+
+.governor-rule-evaluating .governor-rule-status {
+	color: rgba(255, 255, 255, 0.72);
+}
+
+@keyframes governor-pulse {
+
+	0%,
+	100% {
+		opacity: 0.35;
+	}
+
+	50% {
+		opacity: 1;
+	}
+}
+
+.governor-decision {
+	margin-bottom: 12px;
+	padding: 14px;
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: 6px;
+	background: rgba(255, 255, 255, 0.028);
+}
+
+.governor-decision-value {
+	margin: 2px 0 7px;
+	font-size: 28px;
+	font-weight: 900;
+	letter-spacing: 0.04em;
+}
+
+.decision-waiting {
+	color: rgba(255, 255, 255, 0.35);
+}
+
+.decision-evaluating {
+	color: rgba(255, 255, 255, 0.85);
+}
+
+.decision-allow {
+	color: #66d391;
+}
+
+.decision-review {
+	color: #e7bd63;
+}
+
+.decision-block {
+	color: #e36b73;
+}
+
+.decision-fallback {
+	color: #76b7e8;
+}
+
+.governor-reason-text {
+	margin-bottom: 12px;
+	color: rgba(255, 255, 255, 0.52);
+	font-size: 9px;
+	line-height: 1.5;
+}
+
+.governor-audit-events {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	max-height: 155px;
+	overflow-y: auto;
+}
+
+.governor-audit-entry {
+	display: grid;
+	grid-template-columns: 24px 1fr;
+	align-items: center;
+	min-height: 25px;
+	padding: 5px 7px;
+	border-radius: 3px;
+	background: rgba(255, 255, 255, 0.022);
+}
+
+.governor-audit-sequence {
+	color: rgba(255, 255, 255, 0.28);
+	font-family: monospace;
+	font-size: 8px;
+}
+
+.governor-audit-event {
+	overflow: hidden;
+	color: rgba(255, 255, 255, 0.68);
+	font-family: monospace;
+	font-size: 8px;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.governor-chain-status {
+	font-size: 7px;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+}
+
+.governor-chain-valid {
+	color: #66d391;
+}
+
+.governor-chain-invalid {
+	color: #e36b73;
+}
+
+.governor-empty {
+	padding: 12px 4px;
+	color: rgba(255, 255, 255, 0.28);
+	font-size: 8px;
+	line-height: 1.5;
+	text-align: center;
+}
+
+/* Keep the voice interface from covering the transaction console. */
+.commerce-world-active .voice-panel {
+	left: 22px;
+	right: auto;
+	bottom: 22px;
+	max-width: 320px;
+	z-index: 20;
+}
+
+/* Smaller screens */
+@media (max-width: 1100px) {
+
+	.governor-panel,
+	.transaction-connect {
+		width: min(390px, 40vw);
+	}
+}
+
+@media (max-width: 820px) {
+
+	.governor-panel,
+	.transaction-connect {
+		right: 12px;
+		width: min(360px, calc(100vw - 24px));
+	}
+
+	.governor-panel {
+		top: 70px;
+		bottom: 12px;
+	}
+
+	.transaction-connect {
+		top: 10px;
+	}
+
+	.commerce-world-active .voice-panel {
+		left: 12px;
+		bottom: 12px;
+		max-width: 280px;
+	}
+}
