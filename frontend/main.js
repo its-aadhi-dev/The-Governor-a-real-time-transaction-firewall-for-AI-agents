@@ -5,6 +5,7 @@ import { CommerceWorld } from "./world/commerce-world.js";
 import { TransactionView } from "./world/transaction-view.js";
 import { VoiceController } from "./world/voice.js";
 import { VoiceCommandParser } from "./world/voice-command.js";
+import { RazorpayCheckout } from "./world/razorpay-checkout.js";
 
 const container = document.getElementById("globe-container");
 const statusElement = document.getElementById("network-status");
@@ -238,6 +239,8 @@ const voiceController = new VoiceController({
 	},
 });
 
+const razorpayCheckout = new RazorpayCheckout();
+
 showGlobe();
 backButton.addEventListener("click", showGlobe);
 
@@ -247,6 +250,7 @@ window.governorWorld = {
 	transactionView,
 	voiceController,
 	voiceCommandParser,
+	razorpayCheckout,
 	voiceIntent: null,
 	commerceSelection: null,
 	voiceNegotiation: null,
