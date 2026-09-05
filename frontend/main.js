@@ -19,9 +19,40 @@ let globe = null;
 let commerceWorld = null;
 
 const regions = {
-	asia: { id: "asia", label: "ASIA", lat: 20, lon: 100 },
-	europe: { id: "europe", label: "EUROPE", lat: 50, lon: 15 },
-	americas: { id: "americas", label: "AMERICAS", lat: 35, lon: -100 },
+        asia: {
+                id: "asia",
+                label: "ASIA",
+                lat: 20,
+                lon: 100,
+        },
+
+        europe: {
+                id: "europe",
+                label: "EUROPE",
+                lat: 50,
+                lon: 15,
+        },
+
+        americas: {
+                id: "americas",
+                label: "AMERICAS",
+                lat: 35,
+                lon: -100,
+        },
+};
+
+const nodeRegions = {
+        mumbai: regions.asia,
+        singapore: regions.asia,
+        tokyo: regions.asia,
+        dubai: regions.asia,
+
+        london: regions.europe,
+        frankfurt: regions.europe,
+
+        "new-york": regions.americas,
+        "san-francisco": regions.americas,
+        "sao-paulo": regions.americas,
 };
 
 async function loadVoiceMarket() {
@@ -132,10 +163,23 @@ function showGlobe() {
 		<p>A governed network for autonomous transactions.</p>
 	`;
 	globe = new Globe(container, {
-		onNodeSelected(region) {
-			const resolvedRegion = regions[region.id];
-			if (resolvedRegion) showCommerceWorld(resolvedRegion);
-		},
+		onNodeSelected(node) {
+        const resolvedRegion =
+                nodeRegions[node.id];
+
+        console.log(
+                "[Network Node]",
+                node.label,
+                "→",
+                resolvedRegion?.label,
+        );
+
+        if (resolvedRegion) {
+                showCommerceWorld(
+                        resolvedRegion,
+                );
+        }
+},
 	});
 }
 
@@ -249,6 +293,9 @@ const voiceController = new VoiceController({
 			);
 
 			window.governorWorld.voiceNegotiation = data;
+			await transactionView.connectToTransaction(
+				data.transaction_id,
+			);
 
 			const decision = data?.governor?.decision;
 

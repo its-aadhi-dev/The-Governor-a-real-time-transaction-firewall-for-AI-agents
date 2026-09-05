@@ -554,7 +554,7 @@ p {
 
 .governor-audit-entry {
 	display: grid;
-	grid-template-columns: 24px 1fr;
+	grid-template-columns: 28px 1fr;
 	gap: 8px;
 	padding: 7px 0;
 	border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -578,50 +578,38 @@ p {
 	opacity: 0.35;
 }
 
-.governor-audit {
-	margin-top: 16px;
+.governor-chain-valid {
+	opacity: 0.9;
 }
 
-.governor-audit-header {
-	display: flex;
-	justify-content: space-between;
-	gap: 10px;
-	margin-bottom: 8px;
-	font-family: Arial, sans-serif;
-	font-size: 8px;
-	font-weight: 700;
-	letter-spacing: 0.13em;
-	opacity: 0.45;
+.governor-chain-invalid {
+	opacity: 0.9;
 }
 
-.governor-audit-events {
-	max-height: 150px;
-	overflow-y: auto;
-	border-top: 1px solid rgba(255, 255, 255, 0.08);
+/* 4. Stop the voice panel from blocking the initial page */
+body:not(.commerce-world-active) #voice-control {
+	display: none;
 }
 
-.governor-audit-entry {
-	display: grid;
-	grid-template-columns: 24px 1fr;
-	gap: 8px;
-	padding: 7px 0;
-	border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-	font-family: Arial, sans-serif;
-	font-size: 8px;
-	letter-spacing: 0.08em;
+.commerce-world-active #voice-control {
+	display: block;
 }
 
-.governor-audit-sequence {
-	opacity: 0.35;
+/* 5. Stop the giant Asia title from covering the marketplace */
+.commerce-world-active .world-overlay {
+	left: 32px;
+	top: 145px;
+	bottom: auto;
+	max-width: 300px;
 }
 
-.governor-audit-event {
-	opacity: 0.72;
+.commerce-world-active .world-overlay h1 {
+	font-size: clamp(32px, 4vw, 52px);
+	line-height: 0.95;
+	margin-bottom: 10px;
 }
 
-.governor-audit-empty {
-	padding: 10px 0;
-	font-family: Arial, sans-serif;
-	font-size: 8px;
-	opacity: 0.35;
+.commerce-world-active .world-overlay p {
+	max-width: 300px;
+	font-size: 12px;
 }

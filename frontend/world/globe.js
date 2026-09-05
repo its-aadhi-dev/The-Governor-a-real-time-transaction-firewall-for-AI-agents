@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/controls/OrbitControls.js";
 
 export class Globe {
-	constructor(container, { onNodeSelected = () => {} } = {}) {
+	constructor(container, { onNodeSelected = () => { } } = {}) {
 		if (!container) {
 			throw new Error("Globe container is required.");
 		}
@@ -18,22 +18,40 @@ export class Globe {
 		);
 		this.camera.position.set(0, 0.2, 3.8);
 
-		this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-		this.renderer.setSize(container.clientWidth, container.clientHeight);
-		container.appendChild(this.renderer.domElement);
+		this.renderer =
+			new THREE.WebGLRenderer({
+				antialias: true,
+				alpha: true,
+			});
+		this.renderer.setPixelRatio(
+			Math.min(window.devicePixelRatio, 2),
+		);
+		this.renderer.setSize(
+			container.clientWidth,
+			container.clientHeight,
+		);
+		container.appendChild(
+			this.renderer.domElement,
+		);
 		this.raycaster = new THREE.Raycaster();
 		this.pointer = new THREE.Vector2();
-		this.handlePointerDown = this.handlePointerDown.bind(this);
-		this.renderer.domElement.addEventListener("pointerdown", this.handlePointerDown);
-
-		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+		this.handlePointerDown =
+			this.handlePointerDown.bind(this);
+		this.renderer.domElement.addEventListener(
+			"pointerdown",
+			this.handlePointerDown,
+		);
+		this.controls =
+			new OrbitControls(
+				this.camera,
+				this.renderer.domElement,
+			);
 		this.controls.enableDamping = true;
 		this.controls.enablePan = false;
 		this.controls.minDistance = 2.5;
 		this.controls.maxDistance = 6;
 		this.controls.autoRotate = true;
-		this.controls.autoRotateSpeed = 0.25;
+		this.controls.autoRotateSpeed = 0.6;
 
 		this.globeGroup = new THREE.Group();
 		this.nodeGroup = new THREE.Group();
@@ -129,47 +147,226 @@ export class Globe {
 	}
 
 	createCommerceNodes() {
-		const nodes = [
-			{ id: "asia", label: "ASIA", lat: 20, lon: 100 },
-			{ id: "europe", label: "EUROPE", lat: 50, lon: 15 },
-			{ id: "americas", label: "AMERICAS", lat: 35, lon: -100 },
-		];
-		for (const node of nodes) {
-			const mesh = new THREE.Mesh(
-				new THREE.SphereGeometry(0.035, 16, 16),
-				new THREE.MeshBasicMaterial({ color: 0xffffff }),
+    const nodes = [
+        {
+            id: "mumbai",
+            label: "MUMBAI",
+            lat: 19.076,
+            lon: 72.8777,
+        },
+        {
+            id: "singapore",
+            label: "SINGAPORE",
+            lat: 1.3521,
+            lon: 103.8198,
+        },
+        {
+            id: "tokyo",
+            label: "TOKYO",
+            lat: 35.6762,
+            lon: 139.6503,
+        },
+        {
+            id: "dubai",
+            label: "DUBAI",
+            lat: 25.2048,
+            lon: 55.2708,
+        },
+        {
+            id: "london",
+            label: "LONDON",
+            lat: 51.5074,
+            lon: -0.1278,
+        },
+        {
+            id: "frankfurt",
+            label: "FRANKFURT",
+            lat: 50.1109,
+            lon: 8.6821,
+        },
+        {
+            id: "new-york",
+            label: "NEW YORK",
+            lat: 40.7128,
+            lon: -74.006,
+        },
+        {
+            id: "san-francisco",
+            label: "SAN FRANCISCO",
+            lat: 37.7749,
+            lon: -122.4194,
+        },
+        {
+            id: "sao-paulo",
+            label: "SAO PAULO",
+            lat: -23.5505,
+            lon: -46.6333,
+        },
+    ];
+
+    for (const node of nodes) {
+        const mesh = new THREE.Mesh(
+            new THREE.SphereGeometry(
+                0.06,
+                20,
+                20,
+            ),
+            new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+            }),
+        );
+
+        mesh.position.copy(
+            this.latLonToVector3(
+                node.lat,
+                node.lon,
+                1.59,
+            ),
+        );
+
+        mesh.userData.node = node;
+
+        this.nodeGroup.add(mesh);
+
+        const label = this.createNodeLabel(
+            node.label,
+        );
+
+        label.position.copy(
+            this.latLonToVector3(
+                node.lat,
+                node.lon,
+                1.70,
+            ),
+        );
+
+        /*
+         * Labels are visual only.
+         * Do not put them into the raycast target group.
+         */
+        this.globeGroup.add(label);
+    }
+}
+
+	createNodeLabel(text) {
+		const canvas =
+			document.createElement("canvas");
+
+		canvas.width = 512;
+		canvas.height = 128;
+
+		const context =
+			canvas.getContext("2d");
+
+		context.clearRect(
+			0,
+			0,
+			canvas.width,
+			canvas.height,
+		);
+
+		context.fillStyle =
+			"rgba(255,255,255,0.9)";
+
+		context.font =
+			"700 28px Arial";
+
+		context.textAlign =
+			"center";
+
+		context.textBaseline =
+			"middle";
+
+		context.fillText(
+			text,
+			canvas.width / 2,
+			canvas.height / 2,
+		);
+
+		const texture =
+			new THREE.CanvasTexture(
+				canvas,
 			);
-			mesh.position.copy(this.latLonToVector3(node.lat, node.lon, 1.59));
-			mesh.userData.node = node;
-			this.nodeGroup.add(mesh);
-		}
+
+		texture.needsUpdate =
+			true;
+
+		const material =
+			new THREE.SpriteMaterial({
+				map: texture,
+				transparent: true,
+				depthWrite: false,
+			});
+
+		const sprite =
+			new THREE.Sprite(
+				material,
+			);
+
+		sprite.scale.set(
+			0.75,
+			0.19,
+			1,
+		);
+
+		return sprite;
 	}
 
 	latLonToVector3(lat, lon, radius) {
 		const phi = THREE.MathUtils.degToRad(90 - lat);
 		const theta = THREE.MathUtils.degToRad(lon + 180);
-		return new THREE.Vector3(
-			-radius * Math.sin(phi) * Math.cos(theta),
-			radius * Math.cos(phi),
-			radius * Math.sin(phi) * Math.sin(theta),
-		);
+		const x = -(radius * Math.sin(phi) * Math.cos(theta));
+		const z = radius * Math.sin(phi) * Math.sin(theta);
+		const y = radius * Math.cos(phi);
+		return new THREE.Vector3(x, y, z);
 	}
 
 	handlePointerDown(event) {
-		const rect = this.renderer.domElement.getBoundingClientRect();
-		this.pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-		this.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-		this.raycaster.setFromCamera(this.pointer, this.camera);
-		const intersections = this.raycaster.intersectObjects(this.nodeGroup.children, true);
-		if (!intersections.length) return;
-		const node = intersections[0].object.userData.node;
-		if (node) this.onNodeSelected(node);
-	}
+    const rect =
+        this.renderer.domElement.getBoundingClientRect();
+
+    this.pointer.x =
+        ((event.clientX - rect.left) /
+            rect.width) * 2 - 1;
+
+    this.pointer.y =
+        -((event.clientY - rect.top) /
+            rect.height) * 2 + 1;
+
+    this.raycaster.setFromCamera(
+        this.pointer,
+        this.camera,
+    );
+
+    const intersections =
+        this.raycaster.intersectObjects(
+            this.nodeGroup.children,
+            false,
+        );
+
+    if (!intersections.length) {
+        return;
+    }
+
+    const node =
+        intersections[0].object.userData.node;
+
+    if (!node) {
+        return;
+    }
+
+    console.log(
+        "[Globe Node Selected]",
+        node,
+    );
+
+    this.onNodeSelected(node);
+}
 
 	handleResize() {
+		if (!this.container) return;
 		const width = this.container.clientWidth;
 		const height = this.container.clientHeight;
-		if (!width || !height) return;
 		this.camera.aspect = width / height;
 		this.camera.updateProjectionMatrix();
 		this.renderer.setSize(width, height);
@@ -182,9 +379,15 @@ export class Globe {
 	}
 
 	destroy() {
-		this.renderer.domElement.removeEventListener("pointerdown", this.handlePointerDown);
 		window.removeEventListener("resize", this.handleResize);
-		this.controls.dispose();
+		this.renderer.domElement.removeEventListener(
+			"pointerdown",
+			this.handlePointerDown,
+		);
+		if (this.renderer.domElement.parentNode) {
+			this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+		}
 		this.renderer.dispose();
 	}
 }
+
