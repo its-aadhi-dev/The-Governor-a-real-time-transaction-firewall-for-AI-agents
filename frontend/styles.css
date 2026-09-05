@@ -296,3 +296,133 @@ p {
 @media (max-width: 700px) {
 	#governor-visualization { top: auto; bottom: 18px; right: 18px; left: 18px; width: auto; }
 }
+
+/* ============================================================
+   VOICE CONTROL
+   ============================================================ */
+
+#voice-control {
+        position: fixed;
+        left: 28px;
+        bottom: 28px;
+        z-index: 25;
+        width: min(390px, calc(100vw - 56px));
+        pointer-events: auto;
+}
+
+.voice-panel {
+        padding: 18px;
+        background: rgba(3, 9, 16, 0.90);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        backdrop-filter: blur(18px);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+.voice-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 16px;
+}
+
+.voice-eyebrow {
+        font-family: Arial, sans-serif;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        opacity: 0.45;
+}
+
+.voice-title {
+        margin-top: 5px;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+}
+
+.voice-status {
+        font-family: Arial, sans-serif;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        opacity: 0.55;
+        white-space: nowrap;
+}
+
+.voice-button {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 13px 16px;
+        border: 1px solid rgba(255, 255, 255, 0.20);
+        background: rgba(255, 255, 255, 0.07);
+        color: #ffffff;
+        cursor: pointer;
+        font-family: Arial, sans-serif;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+}
+
+.voice-button:hover {
+        background: rgba(255, 255, 255, 0.11);
+}
+
+.voice-button.is-listening {
+        border-color: rgba(255, 255, 255, 0.55);
+}
+
+.voice-button-icon {
+        font-size: 8px;
+        opacity: 0.7;
+}
+
+.voice-button.is-listening .voice-button-icon {
+        animation: voice-pulse 0.9s infinite;
+}
+
+.voice-transcript-label {
+        margin-top: 16px;
+        margin-bottom: 7px;
+        font-family: Arial, sans-serif;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        opacity: 0.42;
+}
+
+.voice-transcript {
+        min-height: 48px;
+        padding: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.035);
+        font-family: Arial, sans-serif;
+        font-size: 10px;
+        line-height: 1.5;
+        color: rgba(255, 255, 255, 0.72);
+}
+
+@keyframes voice-pulse {
+        0%,
+        100% {
+                opacity: 0.25;
+                transform: scale(0.85);
+        }
+
+        50% {
+                opacity: 1;
+                transform: scale(1.15);
+        }
+}
+
+@media (max-width: 700px) {
+        #voice-control {
+                left: 18px;
+                right: 18px;
+                bottom: 18px;
+                width: auto;
+        }
+} 

@@ -1,8 +1,8 @@
 export class VoiceController {
     constructor({
         container,
-        onTranscript = () => {},
-        onStatus = () => {},
+        onTranscript = () => { },
+        onStatus = () => { },
     }) {
         this.container = container;
         this.onTranscript = onTranscript;
@@ -35,7 +35,7 @@ export class VoiceController {
 
         this.recognition.continuous = false;
         this.recognition.interimResults = false;
-        this.recognition.lang = "en-IN";
+        this.recognition.lang = "en-US";
         this.recognition.maxAlternatives = 1;
 
         this.recognition.onstart = () => {
@@ -65,12 +65,25 @@ export class VoiceController {
         };
 
         this.recognition.onerror = (event) => {
-            console.error("[Voice]", event.error);
+            console.error("[Voice]", {
+                error: event.error,
+                message: event.message,
+                type: event.type,
+            });
+
+            const messages = {
+                "not-allowed": "MICROPHONE PERMISSION DENIED",
+                "no-speech": "NO SPEECH DETECTED",
+                "audio-capture": "MICROPHONE UNAVAILABLE",
+                "network": "SPEECH SERVICE UNAVAILABLE",
+                "aborted": "VOICE INPUT ABORTED",
+                "language-not-supported":
+                    "LANGUAGE NOT SUPPORTED",
+            };
 
             this.updateStatus(
-                event.error === "not-allowed"
-                    ? "MICROPHONE PERMISSION DENIED"
-                    : "VOICE INPUT ERROR"
+                messages[event.error] ||
+                "VOICE INPUT ERROR",
             );
         };
 

@@ -174,6 +174,30 @@ const voiceController = new VoiceController({
 
 			window.governorWorld.voiceIntent = command;
 
+			if (command.needsMaximumPrice) {
+				window.governorWorld.pendingVoiceCommand =
+					command;
+
+				console.log(
+					"[Voice Commerce] Maximum price required.",
+				);
+
+				window.dispatchEvent(
+					new CustomEvent(
+						"governor-voice-followup",
+						{
+							detail: {
+								prompt:
+									"What is your maximum price?",
+								command,
+							},
+						},
+					),
+				);
+
+				return;
+			}
+
 			const selection =
 				window.governorWorld.commerceSelection;
 
@@ -307,6 +331,17 @@ window.addEventListener(
 		);
 	},
 );
+
+window.addEventListener(
+	"governor-voice-followup",
+	(event) => {
+		console.log(
+			"[Governor Voice Follow-up]",
+			event.detail.prompt,
+		);
+	},
+);
+
 
 
 showGlobe();

@@ -39,6 +39,7 @@ export class CommerceWorld {
 		);
 
 		this.camera.position.set(8, 7, 10);
+                this.camera.lookAt(0, 1, 0);
 
 		this.renderer = new THREE.WebGLRenderer({
 			antialias: true,
