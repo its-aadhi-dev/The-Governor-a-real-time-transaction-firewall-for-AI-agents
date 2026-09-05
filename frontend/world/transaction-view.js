@@ -13,8 +13,7 @@ export class TransactionView {
         this.globeState = globeState;
         this.transactionId = null;
 
-        this.governor =
-            new GovernorVisualization(container);
+        this.governor = new GovernorVisualization(container);
 
         this.renderControls();
 
@@ -31,7 +30,7 @@ export class TransactionView {
                 this.governor.consumeEvent(event);
 
                 this.setStatus(
-                    `LIVE - EVENT ${event.sequence_number}`,
+                    `LIVE · EVENT ${event.sequence_number ?? "-"}`,
                 );
             });
 
@@ -60,62 +59,29 @@ export class TransactionView {
             "transaction-connect";
 
         controls.innerHTML = `
-            <div class="transaction-connect-label">
-                LIVE TRANSACTION
+            <div class="transaction-console-label">
+                GOVERNOR TRANSACTION CONSOLE
             </div>
 
-            <div class="transaction-connect-row">
-                <input
-                    id="transaction-id-input"
-                    type="text"
-                    placeholder="Transaction ID"
-                    autocomplete="off"
+            <div class="transaction-console-status">
+                <span
+                    id="transaction-stream-status"
+                    class="transaction-stream-status"
                 >
-
-                <button
-                    id="transaction-connect-button"
-                    type="button"
-                >
-                    CONNECT
-                </button>
-            </div>
-
-            <div
-                id="transaction-stream-status"
-                class="transaction-stream-status"
-            >
-                EVENT STREAM OFFLINE
+                    WAITING FOR TRANSACTION
+                </span>
             </div>
         `;
 
-        this.container.prepend(
-            controls,
-        );
-
-        this.input =
-            controls.querySelector(
-                "#transaction-id-input",
-            );
-
-        this.button =
-            controls.querySelector(
-                "#transaction-connect-button",
-            );
+        this.container.prepend(controls);
 
         this.status =
             controls.querySelector(
                 "#transaction-stream-status",
             );
-
-        this.button.addEventListener(
-            "click",
-            () => this.connect(),
-        );
     }
 
-    async connectToTransaction(
-        transactionId,
-    ) {
+    async connectToTransaction(transactionId) {
         const value =
             String(transactionId || "").trim();
 
@@ -123,25 +89,7 @@ export class TransactionView {
             return;
         }
 
-        this.input.value = value;
-
-        await this.connect();
-    }
-
-    async connect() {
-        const transactionId =
-            this.input.value.trim();
-
-        if (!transactionId) {
-            this.setStatus(
-                "TRANSACTION ID REQUIRED",
-            );
-
-            return;
-        }
-
-        this.transactionId =
-            transactionId;
+        this.transactionId = value;
 
         this.governor.reset();
 
@@ -149,17 +97,18 @@ export class TransactionView {
             "LOADING TRANSACTION AUDIT",
         );
 
-        await this.loadAudit(
-            transactionId,
-        );
+        const loaded =
+            await this.loadAudit(value);
+
+        if (!loaded) {
+            return;
+        }
 
         this.setStatus(
-            "CONNECTING TO EVENT STREAM",
+            "LIVE EVENT STREAM",
         );
 
-        this.eventClient.connect(
-            transactionId,
-        );
+        this.eventClient.connect(value);
     }
 
     async loadAudit(transactionId) {
@@ -186,9 +135,11 @@ export class TransactionView {
                 data,
             );
 
-            this.governor.loadAudit(
+            this.governor.hydrateFromAudit(
                 data,
             );
+
+            return true;
         } catch (error) {
             console.error(
                 "[Transaction Audit Error]",
@@ -196,8 +147,15 @@ export class TransactionView {
             );
 
             this.governor.showAuditError(
-                error.message,
+                error.message ||
+                "Unable to load transaction audit.",
             );
+
+            this.setStatus(
+                "AUDIT LOAD FAILED",
+            );
+
+            return false;
         }
     }
 
