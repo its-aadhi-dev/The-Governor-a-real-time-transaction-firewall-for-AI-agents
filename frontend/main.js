@@ -23,34 +23,102 @@ const regions = {
 	americas: { id: "americas", label: "AMERICAS", lat: 35, lon: -100 },
 };
 
-function showCommerceWorld(region) {
+async function loadVoiceMarket() {
+	const response = await fetch(
+		"/api/v1/voice/market",
+	);
+
+	if (!response.ok) {
+		throw new Error(
+			`Market request failed: ${response.status}`,
+		);
+	}
+
+	const data = await response.json();
+
+	return data.merchants || [];
+}
+
+async function showCommerceWorld(region) {
 	if (globe) {
 		globe.destroy();
 		globe = null;
 	}
+
 	container.innerHTML = "";
-	document.body.classList.add("commerce-world-active");
+
+	document.body.classList.add(
+		"commerce-world-active",
+	);
+
 	worldOverlay.innerHTML = `
-		<div class="eyebrow">COMMERCE TERRITORY</div>
+		<div class="eyebrow">
+			COMMERCE TERRITORY
+		</div>
+
 		<h1>${region.label}</h1>
-		<p>Merchant infrastructure is establishing a governed commerce environment.</p>
+
+		<p>
+			Merchant infrastructure is establishing a
+			governed commerce environment.
+		</p>
 	`;
-	commerceWorld = new CommerceWorld(container, {
-        region,
 
-        onMerchantSelected(selection) {
-                console.log(
-                        "[Merchant Selected]",
-                        selection,
-                );
+	try {
+		const merchants =
+			await loadVoiceMarket();
 
-                window.governorWorld.commerceSelection = {
-                        merchantId: selection.merchantId,
-                        itemId: selection.itemId || null,
-                        regionId: selection.regionId,
-                };
-        },
-});
+		commerceWorld =
+			new CommerceWorld(
+				container,
+				{
+					region,
+					merchants:
+						/*
+						 * The database currently
+						 * contains generated event
+						 * fixtures. Keep the first
+						 * four real records for the
+						 * visual territory.
+						 */
+						merchants.slice(
+							0,
+							4,
+						),
+
+					onMerchantSelected(
+						selection,
+					) {
+						console.log(
+							"[Merchant Selected]",
+							selection,
+						);
+
+						window
+							.governorWorld
+							.commerceSelection =
+							selection;
+					},
+				},
+			);
+
+		console.log(
+			"[Commerce Market]",
+			merchants,
+		);
+	} catch (error) {
+		console.error(
+			"[Commerce Market Error]",
+			error,
+		);
+
+		worldOverlay.innerHTML += `
+			<p>
+				MARKET DATA UNAVAILABLE
+			</p>
+		`;
+	}
+}
 
 function showGlobe() {
 	commerceWorld?.destroy();
@@ -105,25 +173,13 @@ const voiceController = new VoiceController({
 
 			window.governorWorld.voiceIntent = command;
 
-			const commerceWorld =
-				window.governorWorld.getCommerceWorld();
+			const selection =
+				window.governorWorld.commerceSelection;
 
-			const region = commerceWorld?.region;
-
-			const merchantId =
-				region?.merchantId ||
-				commerceWorld?.merchantId ||
-				null;
-
-			const itemId =
-				commerceWorld?.selectedItemId ||
-				null;
-
-			if (!merchantId && !itemId) {
+			if (!selection?.merchantId) {
 				console.warn(
-					"[Voice Commerce] No merchant/item selected yet."
+					"[Voice Commerce] Select a merchant first.",
 				);
-
 				return;
 			}
 
@@ -131,16 +187,26 @@ const voiceController = new VoiceController({
 				"/api/v1/voice/negotiate",
 				{
 					method: "POST",
+
 					headers: {
-						"Content-Type": "application/json",
+						"Content-Type":
+							"application/json",
 					},
+
 					body: JSON.stringify({
-						merchant_id: merchantId,
-						item_id: itemId,
-						maximum_price: command.maximumPrice,
-						currency: command.currency,
+						merchant_id:
+							selection.merchantId,
+
+						item_id:
+							selection.itemId,
+
+						maximum_price:
+							command.maximumPrice,
+
+						currency:
+							command.currency,
 					}),
-				}
+				},
 			);
 
 			const data = await response.json();
@@ -176,17 +242,15 @@ showGlobe();
 backButton.addEventListener("click", showGlobe);
 
 window.governorWorld = {
-        globeState,
-        eventClient,
-        transactionView,
-        voiceController,
-        voiceCommandParser,
-        voiceIntent: null,
-        commerceSelection: null,
-        voiceNegotiation: null,
-        getGlobe: () => globe,
-        getCommerceWorld: () => commerceWorld,
-        showGlobe,
+	globeState,
+	eventClient,
+	transactionView,
+	voiceController,
+	voiceCommandParser,
+	voiceIntent: null,
+	commerceSelection: null,
+	voiceNegotiation: null,
+	getGlobe: () => globe,
+	getCommerceWorld: () => commerceWorld,
+	showGlobe,
 };
-}
-
