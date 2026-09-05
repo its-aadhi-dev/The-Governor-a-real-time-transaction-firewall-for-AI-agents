@@ -13,7 +13,11 @@ class PaymentService:
     This service should only be called after Governor authorization.
     """
 
-    def __init__(self, *, gateway: RazorpayAdapter) -> None:
+    def __init__(
+        self,
+        *,
+        gateway: RazorpayAdapter,
+    ) -> None:
         self.gateway = gateway
 
     def create_payment_order(
@@ -24,10 +28,26 @@ class PaymentService:
         currency: str,
     ) -> PaymentResult:
         if amount <= Decimal("0"):
-            raise ValueError("Payment amount must be greater than zero.")
+            raise ValueError(
+                "Payment amount must be greater than zero."
+            )
 
         return self.gateway.create_order(
             transaction_id=transaction_id,
             amount=amount,
             currency=currency,
         )
+
+    def verify_payment_signature(
+        self,
+        *,
+        order_id: str,
+        payment_id: str,
+        signature: str,
+    ) -> bool:
+        return self.gateway.verify_payment_signature(
+            order_id=order_id,
+            payment_id=payment_id,
+            signature=signature,
+        )
+        

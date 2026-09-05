@@ -29,34 +29,81 @@ export class RazorpayCheckout {
 			);
 		}
 
+		if (!transactionId) {
+			throw new Error(
+				"Transaction ID is missing.",
+			);
+		}
+
 		const options = {
 			key: keyId,
+
 			amount: String(
-				Math.round(Number(amount) * 100),
+				Math.round(
+					Number(amount) * 100,
+				),
 			),
+
 			currency,
+
 			name: "The Governor",
+
 			description:
-				itemName || "Governed AI transaction",
+				itemName ||
+				"Governed AI transaction",
+
 			order_id: orderId,
+
 			notes: {
 				transaction_id: transactionId,
 			},
-			handler: (response) => {
+
+			handler: async (response) => {
 				console.log(
 					"[Razorpay Success]",
 					response,
 				);
 
-				window.dispatchEvent(
-					new CustomEvent(
-						"governor-payment-success",
-						{
-							detail: response,
-						},
-					),
-				);
+				try {
+					const result =
+						await this.verifyPayment(
+							transactionId,
+							response,
+						);
+
+					console.log(
+						"[Governor Payment Verified]",
+						result,
+					);
+
+					window.dispatchEvent(
+						new CustomEvent(
+							"governor-payment-verified",
+							{
+								detail: result,
+							},
+						),
+					);
+				} catch (error) {
+					console.error(
+						"[Governor Payment Verification Failed]",
+						error,
+					);
+
+					window.dispatchEvent(
+						new CustomEvent(
+							"governor-payment-verification-failed",
+							{
+								detail: {
+									error:
+										error.message,
+								},
+							},
+						),
+					);
+				}
 			},
+
 			modal: {
 				ondismiss: () => {
 					console.log(
@@ -72,7 +119,8 @@ export class RazorpayCheckout {
 			},
 		};
 
-		this.instance = new window.Razorpay(options);
+		this.instance =
+			new window.Razorpay(options);
 
 		this.instance.on(
 			"payment.failed",
@@ -86,7 +134,8 @@ export class RazorpayCheckout {
 					new CustomEvent(
 						"governor-payment-failed",
 						{
-							detail: response,
+							detail:
+								response,
 						},
 					),
 				);
@@ -95,4 +144,60 @@ export class RazorpayCheckout {
 
 		this.instance.open();
 	}
+
+	async verifyPayment(
+		transactionId,
+		response,
+	) {
+		const requiredFields = [
+			"razorpay_payment_id",
+			"razorpay_order_id",
+			"razorpay_signature",
+		];
+
+		for (const field of requiredFields) {
+			if (!response?.[field]) {
+				throw new Error(
+					`Razorpay response is missing ${field}.`,
+				);
+			}
+		}
+
+		const result = await fetch(
+			`/api/v1/transactions/${encodeURIComponent(
+				transactionId,
+			)}/verify-payment`,
+			{
+				method: "POST",
+
+				headers: {
+					"Content-Type":
+						"application/json",
+				},
+
+				body: JSON.stringify({
+					razorpay_payment_id:
+						response.razorpay_payment_id,
+
+					razorpay_order_id:
+						response.razorpay_order_id,
+
+					razorpay_signature:
+						response.razorpay_signature,
+				}),
+			},
+		);
+
+		const data = await result.json();
+
+		if (!result.ok) {
+			throw new Error(
+				data.detail ||
+				`Payment verification failed (${result.status}).`,
+			);
+		}
+
+		return data;
+	}
 }
+

@@ -221,10 +221,57 @@ const voiceController = new VoiceController({
 
 			console.log(
 				"[Voice Negotiation Result]",
-				data
+				data,
 			);
 
 			window.governorWorld.voiceNegotiation = data;
+
+			const decision = data?.governor?.decision;
+
+			if (decision !== "ALLOW") {
+				console.log(
+					"[Voice Commerce] Governor decision:",
+					decision,
+				);
+
+				return;
+			}
+
+			console.log(
+				"[Voice Commerce] Governor ALLOW. Creating checkout order..."
+			);
+
+			const checkoutResponse = await fetch(
+				`/api/v1/transactions/${encodeURIComponent(
+					data.transaction_id,
+				)}/checkout`,
+				{
+					method: "POST",
+				},
+			);
+
+			const checkoutData = await checkoutResponse.json();
+
+			if (!checkoutResponse.ok) {
+				throw new Error(
+					checkoutData.detail ||
+					`Checkout creation failed (${checkoutResponse.status}).`,
+				);
+			}
+
+			console.log(
+				"[Voice Checkout Order]",
+				checkoutData,
+			);
+
+			await razorpayCheckout.open({
+				keyId: checkoutData.key_id,
+				orderId: checkoutData.order_id,
+				amount: checkoutData.amount,
+				currency: checkoutData.currency,
+				itemName: data.item?.item_name,
+				transactionId: data.transaction_id,
+			});
 
 		} catch (error) {
 			console.error(
@@ -240,6 +287,27 @@ const voiceController = new VoiceController({
 });
 
 const razorpayCheckout = new RazorpayCheckout();
+
+window.addEventListener(
+	"governor-payment-verified",
+	(event) => {
+		console.log(
+			"[Governor] PAYMENT VERIFIED",
+			event.detail,
+		);
+	},
+);
+
+window.addEventListener(
+	"governor-payment-verification-failed",
+	(event) => {
+		console.error(
+			"[Governor] PAYMENT VERIFICATION FAILED",
+			event.detail,
+		);
+	},
+);
+
 
 showGlobe();
 backButton.addEventListener("click", showGlobe);
