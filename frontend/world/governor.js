@@ -13,6 +13,55 @@ export class GovernorVisualization {
             policyVersion: null,
         };
         this.render();
+        this.auditEvents = [];
+
+    }
+
+    appendAuditEvent(event) {
+        if (!event?.event_type) {
+            return;
+        }
+
+        this.auditEvents.push(event);
+
+        const container =
+            this.container.querySelector(
+                "#governor-audit-events",
+            );
+
+        if (!container) {
+            return;
+        }
+
+        if (this.auditEvents.length === 1) {
+            container.innerHTML = "";
+        }
+
+        const entry = document.createElement("div");
+
+        entry.className =
+            "governor-audit-entry";
+
+        entry.innerHTML = `
+        <span class="governor-audit-sequence">
+            ${event.sequence_number ?? "-"}
+        </span>
+
+        <span class="governor-audit-event">
+            ${this.escapeHtml(event.event_type)}
+        </span>
+    `;
+
+        container.appendChild(entry);
+    }
+
+    escapeHtml(value) {
+        return String(value)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
     }
 
     render() {
@@ -46,6 +95,18 @@ export class GovernorVisualization {
                     <div id="governor-reason-text">Waiting for a transaction event.</div>
                 </div>
             </aside>
+            <div class="governor-audit">
+    <div class="governor-audit-header">
+        <span>AUDIT TRAIL</span>
+        <span id="governor-ledger-status">LEDGER UNCHECKED</span>
+    </div>
+
+    <div id="governor-audit-events" class="governor-audit-events">
+        <div class="governor-audit-empty">
+            Waiting for transaction events.
+        </div>
+    </div>
+</div>
         `;
     }
 
@@ -54,6 +115,7 @@ export class GovernorVisualization {
     }
 
     consumeEvent(event) {
+        this.appendAuditEvent(event);
         if (!event?.event_type) return;
         switch (event.event_type) {
             case "GOVERNOR_EVALUATING": this.startEvaluation(); break;
@@ -64,6 +126,13 @@ export class GovernorVisualization {
             case "PAYMENT_PENDING": this.setState("PAYMENT PENDING"); break;
             case "PAYMENT_PAID": this.setState("PAID"); break;
             case "PAYMENT_FAILED": this.setState("PAYMENT FAILED"); break;
+            case "PAYMENT_VERIFIED":
+                this.setState("PAYMENT VERIFIED");
+                break;
+
+            case "PAYMENT_VERIFICATION_FAILED":
+                this.setState("PAYMENT VERIFY FAILED");
+                break;
             default: break;
         }
     }
@@ -125,5 +194,15 @@ export class GovernorVisualization {
         this.setText("governor-risk-level", "-");
         this.setText("governor-policy", "-");
         this.setText("governor-reason-text", "Waiting for a transaction event.");
+        this.auditEvents = [];
+
+        const audit = this.container.querySelector("#governor-audit-events");
+        if (audit) {
+            audit.innerHTML = `
+                <div class="governor-audit-empty">
+                    Waiting for transaction events.
+                </div>
+            `;
+        }
     }
 }
